@@ -1,5 +1,7 @@
 # CycloneTracker — 全球热带气旋地图
 
+[![iOS Build](https://github.com/Justintunsday/CycloneTracker/actions/workflows/ios.yml/badge.svg)](https://github.com/Justintunsday/CycloneTracker/actions/workflows/ios.yml)
+
 一个基于 **SwiftUI + iOS 26 MapKit** 的全球热带气旋追踪 App,可在地图上查看当前活跃的全球热带气旋与历史热带气旋,展示中心气压、最大风速、等级与位置。
 
 ## 数据来源
