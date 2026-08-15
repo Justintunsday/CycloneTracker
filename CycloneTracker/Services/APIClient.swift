@@ -69,36 +69,18 @@ enum GZip {
         }
         if flags & 0x02 != 0 { offset += 2 }
         guard offset < data.count else { throw APIError.invalidData("gzip 文件头损坏") }
-        return try inflate(data.subdata(in: offset..<data.count))
-    }
-
-    private static func inflate(_ source: Data) throws -> Data {
-        var src = [UInt8](source)
-        var output = Data()
-        let chunkSize = 64 * 1024
-        let status: compression_status = src.withUnsafeMutableBufferPointer { srcPointer -> compression_status in
-            guard let srcBase = srcPointer.baseAddress else { return COMPRESSION_STATUS_ERROR }
-            var stream = compression_stream()
-            guard compression_stream_init(&stream, COMPRESSION_STREAM_DECODE, COMPRESSION_ZLIB) != COMPRESSION_STATUS_ERROR else {
-                return COMPRESSION_STATUS_ERROR
-            }
-            defer { compression_stream_destroy(&stream) }
-            stream.src_ptr = UnsafePointer(srcBase)
-            stream.src_size = srcPointer.count
-            var result: compression_status = COMPRESSION_STATUS_OK
-            repeat {
-                var destination = [UInt8](repeating: 0, count: chunkSize)
-                destination.withUnsafeMutableBufferPointer { dstPointer in
-                    stream.dst_ptr = dstPointer.baseAddress!
-                    stream.dst_size = dstPointer.count
-                    result = compression_stream_process(&stream, Int32(COMPRESSION_STREAM_FINALIZE))
-                    output.append(dstPointer.baseAddress!, count: chunkSize - stream.dst_size)
-                }
-            } while result == COMPRESSION_STATUS_OK
-            return result
+        let payload = data.subdata(in: offset..<data.count)
+        var cursor = 0
+        let filter = try InputFilter<Data>(.decompress, using: .zlib) { maxLength in
+            guard cursor < payload.count else { return nil }
+            let end = min(cursor + maxLength, payload.count)
+            let chunk = payload.subdata(in: cursor..<end)
+            cursor = end
+            return chunk
         }
-        guard status == COMPRESSION_STATUS_END else {
-            throw APIError.invalidData("gzip 解压失败")
+        var output = Data()
+        while let chunk = try filter.readData(ofLength: 64 * 1024), !chunk.isEmpty {
+            output.append(chunk)
         }
         return output
     }

@@ -106,13 +106,13 @@ struct StormDetailCard: View {
     }
 
     private func resolvePlaceName() async {
-        let geocoder = CLGeocoder()
         let location = CLLocation(latitude: cyclone.latitude, longitude: cyclone.longitude)
-        guard let placemarks = try? await geocoder.reverseGeocodeLocation(location) else { return }
-        guard let placemark = placemarks.first else { return }
+        guard let request = MKReverseGeocodingRequest(location: location) else { return }
+        guard let items = try? await request.mapItems, let item = items.first else { return }
+        let placemark = item.placemark
         var parts: [String] = []
         if let ocean = placemark.ocean { parts.append(ocean) }
-        if let name = placemark.name { parts.append(name) }
+        if let name = item.name { parts.append(name) }
         if let locality = placemark.locality { parts.append(locality) }
         if let country = placemark.country { parts.append(country) }
         placeName = parts.isEmpty ? nil : parts.joined(separator: " · ")
