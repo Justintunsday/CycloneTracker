@@ -67,26 +67,92 @@ struct IBTrACSService: Sendable {
         return rows
     }
 
+    static let probeChunkSize = 64 * 1024
+
     static func historicalCyclones(
         year: Int,
         basin: CycloneBasin,
         onPhase: @escaping @Sendable (String) -> Void
     ) async throws -> [Cyclone] {
-        let currentYear = Calendar.current.component(.year, from: Date())
-        let fileName: String
-        if year >= currentYear - 2 {
-            fileName = "ibtracs.last3years.list.v04r01.csv"
-        } else {
-            fileName = "ibtracs.\(basin.rawValue).list.v04r01.csv"
-        }
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-        onPhase("正在下载 IBTrACS 数据…")
-        try await APIClient.shared.download(to: fileURL, from: "\(baseURL)/\(fileName)")
+        let fileName = "ibtracs.\(basin.rawValue).list.v04r01.csv"
+        let urlString = "\(baseURL)/\(fileName)"
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(basin.rawValue)-\(year).csv")
         defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        var sliceData: Data?
+        do {
+            sliceData = try await fetchYearSlice(urlString: urlString, year: year, onPhase: onPhase)
+        } catch APIError.rangeNotSupported {
+            sliceData = nil
+        }
+        if let sliceData {
+            try sliceData.write(to: fileURL)
+        } else {
+            onPhase("服务器不支持分段下载,正在下载完整海盆数据(可能较慢)…")
+            try await APIClient.shared.download(to: fileURL, from: urlString)
+        }
         onPhase("正在解析 \(year) 年 \(basin.displayName) 气旋…")
         return try await Task.detached {
             try parseHistoricalFile(at: fileURL, year: year, basin: basin)
         }.value
+    }
+
+    private static func fetchYearSlice(
+        urlString: String,
+        year: Int,
+        onPhase: @escaping @Sendable (String) -> Void
+    ) async throws -> Data {
+        let (_, total) = try await APIClient.shared.rangeData(from: urlString, range: "bytes=0-0")
+        guard let totalSize = total else { throw APIError.invalidData("无法获取文件大小") }
+        if totalSize < 2 * 1024 * 1024 {
+            return try await APIClient.shared.data(from: urlString)
+        }
+        onPhase("正在定位 \(year) 年数据位置…")
+        let start = try await searchBoundary(urlString: urlString, totalSize: totalSize, season: year)
+        let end = try await searchBoundary(urlString: urlString, totalSize: totalSize, season: year + 1)
+        let lo = max(0, start - probeChunkSize)
+        let hi = min(totalSize - 1, end + probeChunkSize)
+        onPhase("正在下载 \(year) 年数据(分段,约几百 KB)…")
+        let (data, _) = try await APIClient.shared.rangeData(from: urlString, range: "bytes=\(lo)-\(hi)")
+        return data
+    }
+
+    private static func searchBoundary(urlString: String, totalSize: Int, season: Int) async throws -> Int {
+        var lo = 0
+        var hi = totalSize
+        while lo < hi {
+            let mid = (lo + hi) / 2
+            let midSeason = try await probeSeason(urlString: urlString, at: mid)
+            if let midSeason {
+                if midSeason >= season {
+                    hi = mid
+                } else {
+                    lo = mid + 1
+                }
+            } else {
+                hi = mid
+            }
+        }
+        return lo
+    }
+
+    private static func probeSeason(urlString: String, at offset: Int) async throws -> Int? {
+        let (data, _) = try await APIClient.shared.rangeData(
+            from: urlString,
+            range: "bytes=\(offset)-\(offset + probeChunkSize)"
+        )
+        guard let text = String(data: data, encoding: .utf8) else { return nil }
+        var lines = text.components(separatedBy: "\n")
+        if offset > 0, !lines.isEmpty {
+            lines.removeFirst()
+        }
+        for line in lines.prefix(3) {
+            let fields = CSVParser.fields(in: line)
+            if fields.count > 1, let season = Int(fields[1]) {
+                return season
+            }
+        }
+        return nil
     }
 
     nonisolated static func parseHistoricalFile(at url: URL, year: Int, basin: CycloneBasin) throws -> [Cyclone] {
