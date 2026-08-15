@@ -16,16 +16,13 @@ struct ControlBar: View {
 
             if store.mode == .historical {
                 HStack(spacing: 10) {
-                    Menu {
-                        Picker("年份", selection: $store.selectedYear) {
-                            ForEach(store.availableYears, id: \.self) { year in
-                                Text("\(String(year)) 年").tag(year)
-                            }
-                        }
-                    } label: {
-                        Label("\(String(store.selectedYear)) 年", systemImage: "calendar")
-                            .font(.subheadline)
-                    }
+                    DatePicker(
+                        "日期",
+                        selection: $store.selectedDate,
+                        in: store.historicalDateRange,
+                        displayedComponents: .date
+                    )
+                    .labelsHidden()
 
                     Menu {
                         Picker("海盆", selection: $store.selectedBasin) {
@@ -80,7 +77,7 @@ struct ControlBar: View {
                 Task { await store.loadHistorical() }
             }
         }
-        .onChange(of: store.selectedYear) { _, _ in
+        .onChange(of: store.selectedDate) { _, _ in
             if store.mode == .historical {
                 Task { await store.loadHistorical() }
             }

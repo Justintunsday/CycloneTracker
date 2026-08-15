@@ -11,25 +11,26 @@ struct CycloneMapView: View {
         Map(position: $position, selection: $selection) {
             ForEach(store.displayedCyclones) { cyclone in
                 let isSelected = store.selectedCyclone?.id == cyclone.id
+                let lineColor = store.mode == .historical
+                    ? StormCategory.fromWind(knots: cyclone.peakWindKnots).color
+                    : cyclone.category.color
                 if cyclone.track.count > 1 {
                     if store.mode == .historical {
                         MapPolyline(coordinates: cyclone.track.map(\.coordinate))
-                            .stroke(cyclone.category.color.opacity(isSelected ? 1.0 : 0.7), lineWidth: isSelected ? 4 : 2)
+                            .stroke(lineColor.opacity(isSelected ? 1.0 : 0.7), lineWidth: isSelected ? 4 : 2)
                             .tag(CycloneSelection(id: cyclone.id))
                     } else {
                         MapPolyline(coordinates: cyclone.track.map(\.coordinate))
-                            .stroke(cyclone.category.color.opacity(0.8), lineWidth: isSelected ? 4 : 2)
+                            .stroke(lineColor.opacity(0.8), lineWidth: isSelected ? 4 : 2)
                     }
                 }
                 if cyclone.forecast.count > 1 {
                     MapPolyline(coordinates: cyclone.forecast.map(\.coordinate))
                         .stroke(.orange.opacity(0.85), style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
                 }
-                if cyclone.isActive || store.mode == .active {
-                    Marker(cyclone.displayName, systemImage: "hurricane", coordinate: cyclone.coordinate)
-                        .tint(cyclone.category.color)
-                        .tag(CycloneSelection(id: cyclone.id))
-                }
+                Marker(cyclone.displayName, systemImage: "hurricane", coordinate: cyclone.coordinate)
+                    .tint(cyclone.category.color)
+                    .tag(CycloneSelection(id: cyclone.id))
             }
         }
         .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
@@ -82,6 +83,17 @@ struct CycloneMapView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                     Text(store.loadingMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(20)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            } else if store.mode == .historical, store.didLoadHistorical, store.historicalCyclones.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "tropicalstorm")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                    Text("\(store.selectedDate.formatted(date: .abbreviated, time: .omitted)) \(store.selectedBasin.displayName) 无活跃气旋记录")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

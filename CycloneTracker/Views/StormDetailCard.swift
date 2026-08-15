@@ -48,6 +48,12 @@ struct StormDetailCard: View {
                 metric("中心气压", cyclone.pressureMB > 0 ? "\(cyclone.pressureMB) hPa" : "—")
             }
 
+            if !cyclone.isActive, cyclone.peakWindKnots > 0 {
+                Text("巅峰强度: \(cyclone.peakWindKnots) kt · \(cyclone.peakPressureMB) hPa")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
             HStack(spacing: 8) {
                 Label(cyclone.coordinate.formatted, systemImage: "mappin.and.ellipse")
                     .font(.caption)
@@ -92,7 +98,8 @@ struct StormDetailCard: View {
         }
         let start = (cyclone.startDate ?? cyclone.date).formatted(date: .abbreviated, time: .omitted)
         let end = (cyclone.endDate ?? cyclone.date).formatted(date: .abbreviated, time: .omitted)
-        return "活动时间: \(start) – \(end)"
+        let snapshot = cyclone.date.formatted(date: .abbreviated, time: .shortened)
+        return "活动: \(start) – \(end) · 当日: \(snapshot)"
     }
 
     private func metric(_ title: String, _ value: String) -> some View {

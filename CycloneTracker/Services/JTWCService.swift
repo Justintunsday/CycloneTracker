@@ -98,7 +98,7 @@ struct JTWCService: Sendable {
             name: name,
             basin: basin,
             source: .jtwc,
-            isActive: true,
+            isActive: current.date.timeIntervalSinceNow > -72 * 3600,
             windKnots: wind,
             pressureMB: pressure,
             category: StormCategory.fromWind(knots: wind),

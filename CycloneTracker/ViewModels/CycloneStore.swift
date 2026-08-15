@@ -19,12 +19,15 @@ final class CycloneStore {
     var errorMessage: String?
     var lastRefresh: Date?
 
-    var selectedYear: Int = Calendar.current.component(.year, from: Date())
+    var selectedDate: Date = Date()
     var selectedBasin: CycloneBasin = .wp
+    var didLoadHistorical = false
 
-    var availableYears: [Int] {
-        let currentYear = Calendar.current.component(.year, from: Date())
-        return Array((1851...currentYear).reversed())
+    var historicalDateRange: ClosedRange<Date> {
+        let calendar = Calendar.current
+        let start = calendar.date(from: DateComponents(year: 1851, month: 1, day: 1)) ?? Date()
+        let today = calendar.startOfDay(for: Date())
+        return start...today
     }
 
     var displayedCyclones: [Cyclone] {
@@ -49,7 +52,7 @@ final class CycloneStore {
                 .filter { JTWCService.isJTWCKey($0.atcfID.lowercased()) }
                 .map { $0.atcfID.lowercased() })
             storms += stormsFromActiveRows(rows, excluding: nhcIDs.union(jtwcKeys))
-            activeCyclones = storms.sorted { $0.category > $1.category }
+            activeCyclones = storms.filter(\.isActive).sorted { $0.category > $1.category }
             lastRefresh = Date()
             errorMessage = nil
         } catch {
@@ -64,8 +67,9 @@ final class CycloneStore {
         selectedCyclone = nil
         defer { isLoading = false }
         do {
-            historicalCyclones = try await IBTrACSService.historicalCyclones(
-                year: selectedYear,
+            let year = Calendar.current.component(.year, from: selectedDate)
+            let all = try await IBTrACSService.historicalCyclones(
+                year: year,
                 basin: selectedBasin,
                 onPhase: { phase in
                     Task { @MainActor in
@@ -73,10 +77,39 @@ final class CycloneStore {
                     }
                 }
             )
+            historicalCyclones = all
+                .compactMap { snapshot(of: $0, on: selectedDate) }
+                .sorted { $0.category > $1.category }
+            didLoadHistorical = true
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func snapshot(of cyclone: Cyclone, on day: Date) -> Cyclone? {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: day)
+        guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return nil }
+        let dayPoints = cyclone.track.filter { $0.date >= dayStart && $0.date < dayEnd }
+        guard let last = dayPoints.last else { return nil }
+        let wind = last.windKnots ?? cyclone.windKnots
+        let pressure = last.pressureMB ?? cyclone.pressureMB
+        return Cyclone(
+            id: cyclone.id,
+            name: cyclone.name,
+            basin: cyclone.basin,
+            source: cyclone.source,
+            isActive: false,
+            windKnots: wind,
+            pressureMB: pressure,
+            category: StormCategory.fromWind(knots: wind),
+            latitude: last.latitude,
+            longitude: last.longitude,
+            date: last.date,
+            track: cyclone.track,
+            forecast: []
+        )
     }
 
     func retry() async {

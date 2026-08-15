@@ -53,6 +53,6 @@ struct StormListView: View {
     private var navigationTitle: String {
         store.mode == .active
             ? "活跃热带气旋 (\(store.activeCyclones.count))"
-            : "\(String(store.selectedYear)) 年 \(store.selectedBasin.displayName) (\(store.historicalCyclones.count))"
+            : "\(store.selectedDate.formatted(date: .abbreviated, time: .omitted)) \(store.selectedBasin.displayName) (\(store.historicalCyclones.count))"
     }
 }
