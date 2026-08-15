@@ -168,8 +168,27 @@ struct Cyclone: Identifiable, Hashable, Sendable {
     }
 }
 
-struct CycloneSelection: MapSelectable, Sendable {
+struct CycloneSelection: MapSelectable {
     let id: String
+    var feature: MapFeature?
+
+    init(id: String) {
+        self.id = id
+        self.feature = nil
+    }
+
+    init(_ feature: MapFeature?) {
+        self.feature = feature
+        self.id = feature?.title ?? ""
+    }
+
+    static func == (lhs: CycloneSelection, rhs: CycloneSelection) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 extension CLLocationCoordinate2D {

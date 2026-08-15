@@ -40,7 +40,16 @@ struct CycloneMapView: View {
         }
         .onChange(of: selection) { _, newValue in
             if let newValue {
-                store.selectedCyclone = store.displayedCyclones.first { $0.id == newValue.id }
+                if let match = store.displayedCyclones.first(where: { $0.id == newValue.id }) {
+                    store.selectedCyclone = match
+                } else if let match = store.displayedCyclones.first(where: { $0.displayName == newValue.id }) {
+                    store.selectedCyclone = match
+                } else if let coordinate = newValue.feature?.coordinate {
+                    store.selectedCyclone = store.displayedCyclones.first { cyclone in
+                        abs(cyclone.latitude - coordinate.latitude) < 0.05
+                            && abs(cyclone.longitude - coordinate.longitude) < 0.05
+                    }
+                }
             } else {
                 store.selectedCyclone = nil
             }

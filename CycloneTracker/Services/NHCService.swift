@@ -33,7 +33,7 @@ struct NHCService: Sendable {
                 track = atcf.track
                 forecast = atcf.forecast
             }
-            let date = DateParsing.isoFormatter.date(from: summary.lastUpdate ?? "") ?? track.last?.date ?? Date()
+            let date = DateParsing.parseISO(summary.lastUpdate ?? "") ?? track.last?.date ?? Date()
             storms.append(Cyclone(
                 id: "NHC-\(summary.id.uppercased())",
                 name: summary.name,
