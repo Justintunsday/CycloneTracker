@@ -5,11 +5,25 @@ struct MapSideControls: View {
     let onFit: () -> Void
     @State private var showList = false
     @State private var showDatePicker = false
+    @State private var isExpanded = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            dataGroup
-            mapGroup
+        HStack(spacing: 8) {
+            Button {
+                withAnimation(.spring(duration: 0.45, bounce: 0.3)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                Image(systemName: isExpanded ? "xmark" : "line.3.horizontal")
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.glass)
+            .accessibilityLabel(isExpanded ? "收起工具栏" : "展开工具栏")
+
+            if isExpanded {
+                controls
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
         }
         .animation(.spring(duration: 0.45, bounce: 0.3), value: store.mode)
         .onChange(of: store.selectedDate) { _, _ in
@@ -37,19 +51,19 @@ struct MapSideControls: View {
         }
     }
 
-    private var dataGroup: some View {
-        VStack(spacing: 10) {
+    private var controls: some View {
+        HStack(spacing: 8) {
             if store.mode == .active {
                 Button(action: toggleMode) {
                     Image(systemName: "hurricane")
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                 }
                 .buttonStyle(.glass)
                 .accessibilityLabel("切换至历史模式")
             } else {
                 Button(action: toggleMode) {
                     Image(systemName: "clock.arrow.circlepath")
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                 }
                 .buttonStyle(.glassProminent)
                 .accessibilityLabel("切换至实时模式")
@@ -60,7 +74,7 @@ struct MapSideControls: View {
                     showDatePicker = true
                 } label: {
                     Image(systemName: "calendar")
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                 }
                 .buttonStyle(.glass)
                 .accessibilityLabel("选择日期")
@@ -74,7 +88,7 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "globe.asia.australia.fill")
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                 }
                 .accessibilityLabel("选择海盆")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
@@ -88,7 +102,7 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "arrow.down.circle")
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                 }
                 .accessibilityLabel("缓存近10年数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
@@ -97,20 +111,16 @@ struct MapSideControls: View {
                     Task { await store.refreshActive() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
                 }
                 .buttonStyle(.glass)
                 .accessibilityLabel("刷新实时数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
             }
-        }
-    }
 
-    private var mapGroup: some View {
-        VStack(spacing: 10) {
             Button(action: onFit) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
             }
             .buttonStyle(.glass)
             .accessibilityLabel("缩放至全部气旋")
@@ -119,7 +129,7 @@ struct MapSideControls: View {
                 showList = true
             } label: {
                 Image(systemName: "list.bullet")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
             }
             .buttonStyle(.glass)
             .accessibilityLabel("气旋列表")

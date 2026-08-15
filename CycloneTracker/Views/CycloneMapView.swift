@@ -61,11 +61,10 @@ struct CycloneMapView: View {
                 fitAll()
             }
         }
-        .overlay(alignment: .trailing) {
+        .overlay(alignment: .topLeading) {
             MapSideControls(store: store, onFit: fitAll)
-                .padding(.trailing, 8)
-                .padding(.bottom, store.selectedCyclone != nil ? 150 : 8)
-                .animation(.easeInOut(duration: 0.2), value: store.selectedCyclone != nil)
+                .padding(.top, 8)
+                .padding(.leading, 8)
         }
         .overlay(alignment: .bottomTrailing) {
             Group {
