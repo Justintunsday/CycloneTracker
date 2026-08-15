@@ -37,9 +37,36 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build | tee xcodebuild.log
 
+      - name: Archive (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild archive -project CycloneTracker.xcodeproj \
+            -scheme CycloneTracker \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            -archivePath build/CycloneTracker.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" | tee xcodebuild-archive.log
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R "build/CycloneTracker.xcarchive/Products/Applications/CycloneTracker.app" Payload/
+          ditto -c -k --sequesterRsrc --keepParent Payload CycloneTracker.ipa
+          ls -lh CycloneTracker.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: CycloneTracker-unsigned-ipa
+          path: CycloneTracker.ipa
+          if-no-files-found: error
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xcodebuild-log
-          path: xcodebuild.log
+          path: |
+            xcodebuild.log
+            xcodebuild-archive.log
