@@ -61,8 +61,11 @@ struct CycloneMapView: View {
                 fitAll()
             }
         }
-        .overlay(alignment: .top) {
-            ControlBar(store: store, onFit: fitAll)
+        .overlay(alignment: .trailing) {
+            MapSideControls(store: store, onFit: fitAll)
+                .padding(.trailing, 8)
+                .offset(y: store.selectedCyclone != nil ? -140 : 0)
+                .animation(.easeInOut(duration: 0.2), value: store.selectedCyclone != nil)
         }
         .overlay(alignment: .bottom) {
             if let cyclone = store.selectedCyclone {

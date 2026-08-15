@@ -4,10 +4,17 @@ struct ContentView: View {
     @State private var store = CycloneStore()
 
     var body: some View {
-        CycloneMapView(store: store)
-            .task {
-                await store.refreshActive()
+        TabView {
+            Tab("地图", systemImage: "map") {
+                CycloneMapView(store: store)
             }
+            Tab("设置", systemImage: "gearshape") {
+                SettingsView()
+            }
+        }
+        .task {
+            await store.refreshActive()
+        }
     }
 }
 
