@@ -8,16 +8,18 @@ struct MapSideControls: View {
     @State private var isExpanded = false
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             Button {
                 withAnimation(.spring(duration: 0.45, bounce: 0.3)) {
                     isExpanded.toggle()
                 }
             } label: {
                 Image(systemName: isExpanded ? "xmark" : "line.3.horizontal")
-                    .frame(width: 44, height: 44)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 34, height: 34)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(CircleGlassButtonStyle())
+            .circleGlass()
             .accessibilityLabel(isExpanded ? "收起工具栏" : "展开工具栏")
 
             if isExpanded {
@@ -52,20 +54,24 @@ struct MapSideControls: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             if store.mode == .active {
                 Button(action: toggleMode) {
                     Image(systemName: "hurricane")
-                        .frame(width: 40, height: 40)
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 34, height: 34)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(CircleGlassButtonStyle())
+                .circleGlass()
                 .accessibilityLabel("切换至历史模式")
             } else {
                 Button(action: toggleMode) {
                     Image(systemName: "clock.arrow.circlepath")
-                        .frame(width: 40, height: 40)
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 34, height: 34)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(CircleGlassButtonStyle())
+                .circleGlass(tintOpacity: 0.28)
                 .accessibilityLabel("切换至实时模式")
             }
 
@@ -74,9 +80,11 @@ struct MapSideControls: View {
                     showDatePicker = true
                 } label: {
                     Image(systemName: "calendar")
-                        .frame(width: 40, height: 40)
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 34, height: 34)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(CircleGlassButtonStyle())
+                .circleGlass()
                 .accessibilityLabel("选择日期")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
 
@@ -88,8 +96,10 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "globe.asia.australia.fill")
-                        .frame(width: 40, height: 40)
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 34, height: 34)
                 }
+                .circleGlass()
                 .accessibilityLabel("选择海盆")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
 
@@ -102,8 +112,10 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "arrow.down.circle")
-                        .frame(width: 40, height: 40)
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 34, height: 34)
                 }
+                .circleGlass()
                 .accessibilityLabel("缓存近10年数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
             } else {
@@ -111,27 +123,33 @@ struct MapSideControls: View {
                     Task { await store.refreshActive() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .frame(width: 40, height: 40)
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 34, height: 34)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(CircleGlassButtonStyle())
+                .circleGlass()
                 .accessibilityLabel("刷新实时数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
             }
 
             Button(action: onFit) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .frame(width: 40, height: 40)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 34, height: 34)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(CircleGlassButtonStyle())
+            .circleGlass()
             .accessibilityLabel("缩放至全部气旋")
 
             Button {
                 showList = true
             } label: {
                 Image(systemName: "list.bullet")
-                    .frame(width: 40, height: 40)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 34, height: 34)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(CircleGlassButtonStyle())
+            .circleGlass()
             .accessibilityLabel("气旋列表")
         }
     }
