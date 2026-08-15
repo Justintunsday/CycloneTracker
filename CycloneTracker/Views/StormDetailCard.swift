@@ -81,8 +81,7 @@ struct StormDetailCard: View {
             }
         }
         .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .shadow(radius: 4)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
         .task(id: cyclone.id) {
             await resolvePlaceName()
         }

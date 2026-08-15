@@ -87,7 +87,7 @@ struct CycloneMapView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(20)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
             } else if store.mode == .historical, store.didLoadHistorical, store.historicalCyclones.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "tropicalstorm")
@@ -98,7 +98,7 @@ struct CycloneMapView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(20)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
             }
         }
         .alert(

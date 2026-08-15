@@ -99,7 +99,7 @@ struct ControlBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
         .padding(.horizontal)
         .onChange(of: store.mode) { _, newMode in
             if newMode == .historical, store.historicalCyclones.isEmpty {
