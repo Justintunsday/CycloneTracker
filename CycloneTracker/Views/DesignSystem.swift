@@ -9,7 +9,7 @@ struct LiquidPressButtonStyle: ButtonStyle {
     }
 }
 
-struct SpecularRim<S: Shape>: ViewModifier {
+struct SpecularRim<S: InsettableShape>: ViewModifier {
     let shape: S
 
     func body(content: Content) -> some View {
@@ -29,7 +29,7 @@ struct SpecularRim<S: Shape>: ViewModifier {
 }
 
 extension View {
-    func specularRim<S: Shape>(in shape: S) -> some View {
+    func specularRim<S: InsettableShape>(in shape: S) -> some View {
         modifier(SpecularRim(shape: shape))
     }
 }
