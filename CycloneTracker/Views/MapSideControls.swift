@@ -11,7 +11,6 @@ struct MapSideControls: View {
             dataGroup
             mapGroup
         }
-        .buttonStyle(LiquidPressButtonStyle())
         .animation(.spring(duration: 0.45, bounce: 0.3), value: store.mode)
         .onChange(of: store.selectedDate) { _, _ in
             if store.mode == .historical {
@@ -32,7 +31,7 @@ struct MapSideControls: View {
     }
 
     private var dataGroup: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 2) {
             Button {
                 store.mode = store.mode == .active ? .historical : .active
                 if store.mode == .historical, store.historicalCyclones.isEmpty {
@@ -40,8 +39,10 @@ struct MapSideControls: View {
                 }
             } label: {
                 Image(systemName: store.mode == .active ? "hurricane" : "clock.arrow.circlepath")
-                    .frame(width: 34, height: 34)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
+            .buttonStyle(LiquidPressButtonStyle())
             .accessibilityLabel(store.mode == .active ? "切换至历史模式" : "切换至实时模式")
 
             if store.mode == .historical {
@@ -49,8 +50,10 @@ struct MapSideControls: View {
                     showDatePicker = true
                 } label: {
                     Image(systemName: "calendar")
-                        .frame(width: 34, height: 34)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
+                .buttonStyle(LiquidPressButtonStyle())
                 .accessibilityLabel("选择日期")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
 
@@ -62,7 +65,8 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "globe.asia.australia.fill")
-                        .frame(width: 34, height: 34)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .accessibilityLabel("选择海盆")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
@@ -76,7 +80,8 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "arrow.down.circle")
-                        .frame(width: 34, height: 34)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .accessibilityLabel("缓存近10年数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
@@ -85,34 +90,40 @@ struct MapSideControls: View {
                     Task { await store.refreshActive() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .frame(width: 34, height: 34)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
+                .buttonStyle(LiquidPressButtonStyle())
                 .accessibilityLabel("刷新实时数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
             }
         }
-        .padding(6)
+        .padding(4)
         .glassEffect(.regular.tint(.oceanGlass.opacity(0.10)), in: Capsule())
         .specularRim(in: Capsule())
     }
 
     private var mapGroup: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 2) {
             Button(action: onFit) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .frame(width: 34, height: 34)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
+            .buttonStyle(LiquidPressButtonStyle())
             .accessibilityLabel("缩放至全部气旋")
 
             Button {
                 showList = true
             } label: {
                 Image(systemName: "list.bullet")
-                    .frame(width: 34, height: 34)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
+            .buttonStyle(LiquidPressButtonStyle())
             .accessibilityLabel("气旋列表")
         }
-        .padding(6)
+        .padding(4)
         .glassEffect(.regular.tint(.oceanGlass.opacity(0.08)), in: Capsule())
         .specularRim(in: Capsule())
     }
