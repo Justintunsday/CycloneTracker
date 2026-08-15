@@ -82,7 +82,6 @@ struct StormDetailCard: View {
         }
         .padding()
         .glassEffect(.regular.tint(.oceanGlass.opacity(0.07)), in: RoundedRectangle(cornerRadius: 24))
-        .specularRim(in: RoundedRectangle(cornerRadius: 24))
         .task(id: cyclone.id) {
             await resolvePlaceName()
         }

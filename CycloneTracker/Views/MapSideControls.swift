@@ -7,7 +7,7 @@ struct MapSideControls: View {
     @State private var showDatePicker = false
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 10) {
+        VStack(spacing: 10) {
             dataGroup
             mapGroup
         }
@@ -30,20 +30,30 @@ struct MapSideControls: View {
         }
     }
 
+    private func toggleMode() {
+        store.mode = store.mode == .active ? .historical : .active
+        if store.mode == .historical, store.historicalCyclones.isEmpty {
+            Task { await store.loadHistorical() }
+        }
+    }
+
     private var dataGroup: some View {
-        VStack(spacing: 2) {
-            Button {
-                store.mode = store.mode == .active ? .historical : .active
-                if store.mode == .historical, store.historicalCyclones.isEmpty {
-                    Task { await store.loadHistorical() }
+        VStack(spacing: 10) {
+            if store.mode == .active {
+                Button(action: toggleMode) {
+                    Image(systemName: "hurricane")
+                        .frame(width: 44, height: 44)
                 }
-            } label: {
-                Image(systemName: store.mode == .active ? "hurricane" : "clock.arrow.circlepath")
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
+                .buttonStyle(.glass)
+                .accessibilityLabel("切换至历史模式")
+            } else {
+                Button(action: toggleMode) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.glassProminent)
+                .accessibilityLabel("切换至实时模式")
             }
-            .buttonStyle(LiquidPressButtonStyle())
-            .accessibilityLabel(store.mode == .active ? "切换至历史模式" : "切换至实时模式")
 
             if store.mode == .historical {
                 Button {
@@ -51,9 +61,8 @@ struct MapSideControls: View {
                 } label: {
                     Image(systemName: "calendar")
                         .frame(width: 44, height: 44)
-                        .contentShape(Circle())
                 }
-                .buttonStyle(LiquidPressButtonStyle())
+                .buttonStyle(.glass)
                 .accessibilityLabel("选择日期")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
 
@@ -66,7 +75,6 @@ struct MapSideControls: View {
                 } label: {
                     Image(systemName: "globe.asia.australia.fill")
                         .frame(width: 44, height: 44)
-                        .contentShape(Circle())
                 }
                 .accessibilityLabel("选择海盆")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
@@ -81,7 +89,6 @@ struct MapSideControls: View {
                 } label: {
                     Image(systemName: "arrow.down.circle")
                         .frame(width: 44, height: 44)
-                        .contentShape(Circle())
                 }
                 .accessibilityLabel("缓存近10年数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
@@ -91,26 +98,21 @@ struct MapSideControls: View {
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .frame(width: 44, height: 44)
-                        .contentShape(Circle())
                 }
-                .buttonStyle(LiquidPressButtonStyle())
+                .buttonStyle(.glass)
                 .accessibilityLabel("刷新实时数据")
                 .transition(.scale(scale: 0.5).combined(with: .opacity))
             }
         }
-        .padding(4)
-        .glassEffect(.regular.tint(.oceanGlass.opacity(0.10)), in: Capsule())
-        .specularRim(in: Capsule())
     }
 
     private var mapGroup: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 10) {
             Button(action: onFit) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
                     .frame(width: 44, height: 44)
-                    .contentShape(Circle())
             }
-            .buttonStyle(LiquidPressButtonStyle())
+            .buttonStyle(.glass)
             .accessibilityLabel("缩放至全部气旋")
 
             Button {
@@ -118,14 +120,10 @@ struct MapSideControls: View {
             } label: {
                 Image(systemName: "list.bullet")
                     .frame(width: 44, height: 44)
-                    .contentShape(Circle())
             }
-            .buttonStyle(LiquidPressButtonStyle())
+            .buttonStyle(.glass)
             .accessibilityLabel("气旋列表")
         }
-        .padding(4)
-        .glassEffect(.regular.tint(.oceanGlass.opacity(0.08)), in: Capsule())
-        .specularRim(in: Capsule())
     }
 }
 

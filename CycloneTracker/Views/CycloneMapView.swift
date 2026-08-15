@@ -86,7 +86,6 @@ struct CycloneMapView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .glassEffect(.regular.tint(.oceanGlass.opacity(0.08)), in: Capsule())
-                    .specularRim(in: Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
@@ -118,7 +117,6 @@ struct CycloneMapView: View {
                 }
                 .padding(20)
                 .glassEffect(.regular.tint(.oceanGlass.opacity(0.06)), in: RoundedRectangle(cornerRadius: 16))
-                .specularRim(in: RoundedRectangle(cornerRadius: 16))
             } else if store.mode == .historical, store.didLoadHistorical, store.historicalCyclones.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "tropicalstorm")
@@ -130,7 +128,6 @@ struct CycloneMapView: View {
                 }
                 .padding(20)
                 .glassEffect(.regular.tint(.oceanGlass.opacity(0.06)), in: RoundedRectangle(cornerRadius: 16))
-                .specularRim(in: RoundedRectangle(cornerRadius: 16))
             }
         }
         .alert(
