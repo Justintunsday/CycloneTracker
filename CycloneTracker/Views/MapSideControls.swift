@@ -7,99 +7,12 @@ struct MapSideControls: View {
     @State private var showDatePicker = false
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 8) {
-            VStack(spacing: 6) {
-                Button {
-                    store.mode = store.mode == .active ? .historical : .active
-                    if store.mode == .historical, store.historicalCyclones.isEmpty {
-                        Task { await store.loadHistorical() }
-                    }
-                } label: {
-                    Image(systemName: store.mode == .active ? "hurricane" : "clock.arrow.circlepath")
-                        .frame(width: 34, height: 34)
-                }
-                .accessibilityLabel(store.mode == .active ? "切换至历史模式" : "切换至实时模式")
-
-                if store.mode == .historical {
-                    Button {
-                        showDatePicker = true
-                    } label: {
-                        Image(systemName: "calendar")
-                            .frame(width: 34, height: 34)
-                    }
-                    .accessibilityLabel("选择日期")
-
-                    Menu {
-                        Picker("海盆", selection: $store.selectedBasin) {
-                            ForEach(CycloneBasin.allCases) { basin in
-                                Text(basin.displayName).tag(basin)
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "globe.asia.australia.fill")
-                            .frame(width: 34, height: 34)
-                    }
-                    .accessibilityLabel("选择海盆")
-
-                    Menu {
-                        Button("缓存当前海盆近10年") {
-                            store.cacheRecentYears(basins: [store.selectedBasin])
-                        }
-                        Button("缓存全部海盆近10年") {
-                            store.cacheRecentYears(basins: CycloneBasin.allCases)
-                        }
-                    } label: {
-                        Image(systemName: "arrow.down.circle")
-                            .frame(width: 34, height: 34)
-                    }
-                    .accessibilityLabel("缓存近10年数据")
-                } else {
-                    Button {
-                        Task { await store.refreshActive() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .frame(width: 34, height: 34)
-                    }
-                    .accessibilityLabel("刷新实时数据")
-                }
-
-                Button(action: onFit) {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .frame(width: 34, height: 34)
-                }
-                .accessibilityLabel("缩放至全部气旋")
-
-                Button {
-                    showList = true
-                } label: {
-                    Image(systemName: "list.bullet")
-                        .frame(width: 34, height: 34)
-                }
-                .accessibilityLabel("气旋列表")
-            }
-            .padding(6)
-            .glassEffect(.regular, in: Capsule())
-
-            if store.isCachingRecent {
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .controlSize(.mini)
-                    Text(store.cachingMessage)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    Button {
-                        store.cancelCaching()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.caption2)
-                    }
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .glassEffect(.regular, in: Capsule())
-            }
+        VStack(alignment: .trailing, spacing: 10) {
+            dataGroup
+            mapGroup
         }
+        .buttonStyle(LiquidPressButtonStyle())
+        .animation(.spring(duration: 0.45, bounce: 0.3), value: store.mode)
         .onChange(of: store.selectedDate) { _, _ in
             if store.mode == .historical {
                 Task { await store.loadHistorical() }
@@ -116,6 +29,92 @@ struct MapSideControls: View {
         .sheet(isPresented: $showList) {
             StormListView(store: store)
         }
+    }
+
+    private var dataGroup: some View {
+        VStack(spacing: 6) {
+            Button {
+                store.mode = store.mode == .active ? .historical : .active
+                if store.mode == .historical, store.historicalCyclones.isEmpty {
+                    Task { await store.loadHistorical() }
+                }
+            } label: {
+                Image(systemName: store.mode == .active ? "hurricane" : "clock.arrow.circlepath")
+                    .frame(width: 34, height: 34)
+            }
+            .accessibilityLabel(store.mode == .active ? "切换至历史模式" : "切换至实时模式")
+
+            if store.mode == .historical {
+                Button {
+                    showDatePicker = true
+                } label: {
+                    Image(systemName: "calendar")
+                        .frame(width: 34, height: 34)
+                }
+                .accessibilityLabel("选择日期")
+                .transition(.scale(scale: 0.5).combined(with: .opacity))
+
+                Menu {
+                    Picker("海盆", selection: $store.selectedBasin) {
+                        ForEach(CycloneBasin.allCases) { basin in
+                            Text(basin.displayName).tag(basin)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "globe.asia.australia.fill")
+                        .frame(width: 34, height: 34)
+                }
+                .accessibilityLabel("选择海盆")
+                .transition(.scale(scale: 0.5).combined(with: .opacity))
+
+                Menu {
+                    Button("缓存当前海盆近10年") {
+                        store.cacheRecentYears(basins: [store.selectedBasin])
+                    }
+                    Button("缓存全部海盆近10年") {
+                        store.cacheRecentYears(basins: CycloneBasin.allCases)
+                    }
+                } label: {
+                    Image(systemName: "arrow.down.circle")
+                        .frame(width: 34, height: 34)
+                }
+                .accessibilityLabel("缓存近10年数据")
+                .transition(.scale(scale: 0.5).combined(with: .opacity))
+            } else {
+                Button {
+                    Task { await store.refreshActive() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .frame(width: 34, height: 34)
+                }
+                .accessibilityLabel("刷新实时数据")
+                .transition(.scale(scale: 0.5).combined(with: .opacity))
+            }
+        }
+        .padding(6)
+        .glassEffect(.regular.tint(.oceanGlass.opacity(0.10)), in: Capsule())
+        .specularRim(in: Capsule())
+    }
+
+    private var mapGroup: some View {
+        VStack(spacing: 6) {
+            Button(action: onFit) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .frame(width: 34, height: 34)
+            }
+            .accessibilityLabel("缩放至全部气旋")
+
+            Button {
+                showList = true
+            } label: {
+                Image(systemName: "list.bullet")
+                    .frame(width: 34, height: 34)
+            }
+            .accessibilityLabel("气旋列表")
+        }
+        .padding(6)
+        .glassEffect(.regular.tint(.oceanGlass.opacity(0.08)), in: Capsule())
+        .specularRim(in: Capsule())
     }
 }
 

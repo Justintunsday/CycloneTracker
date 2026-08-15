@@ -67,6 +67,31 @@ struct CycloneMapView: View {
                 .offset(y: store.selectedCyclone != nil ? -140 : 0)
                 .animation(.easeInOut(duration: 0.2), value: store.selectedCyclone != nil)
         }
+        .overlay(alignment: .bottomTrailing) {
+            if store.isCachingRecent {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.mini)
+                    Text(store.cachingMessage)
+                        .font(.caption2)
+                        .lineLimit(1)
+                    Button {
+                        store.cancelCaching()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .glassEffect(.regular.tint(.oceanGlass.opacity(0.08)), in: Capsule())
+                .specularRim(in: Capsule())
+                .padding(.trailing, 12)
+                .padding(.bottom, store.selectedCyclone != nil ? 240 : 4)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.5, bounce: 0.25), value: store.isCachingRecent)
         .overlay(alignment: .bottom) {
             if let cyclone = store.selectedCyclone {
                 StormDetailCard(
@@ -90,7 +115,8 @@ struct CycloneMapView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(20)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                .glassEffect(.regular.tint(.oceanGlass.opacity(0.06)), in: RoundedRectangle(cornerRadius: 16))
+                .specularRim(in: RoundedRectangle(cornerRadius: 16))
             } else if store.mode == .historical, store.didLoadHistorical, store.historicalCyclones.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "tropicalstorm")
@@ -101,7 +127,8 @@ struct CycloneMapView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(20)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                .glassEffect(.regular.tint(.oceanGlass.opacity(0.06)), in: RoundedRectangle(cornerRadius: 16))
+                .specularRim(in: RoundedRectangle(cornerRadius: 16))
             }
         }
         .alert(
