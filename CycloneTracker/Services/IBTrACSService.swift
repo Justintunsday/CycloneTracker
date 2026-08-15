@@ -68,32 +68,80 @@ struct IBTrACSService: Sendable {
         return rows
     }
 
+    static func cacheFileURL(basin: CycloneBasin, year: Int) -> URL {
+        let directory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("IBTrACSCache", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory.appendingPathComponent("\(basin.rawValue)-\(year).csv")
+    }
+
     static func historicalCyclones(
         year: Int,
         basin: CycloneBasin,
         onPhase: @escaping @Sendable (String) -> Void
     ) async throws -> [Cyclone] {
-        let fileName = "ibtracs.\(basin.rawValue).list.v04r01.csv"
-        let urlString = "\(baseURL)/\(fileName)"
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(basin.rawValue)-\(year).csv")
-        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let cacheURL = cacheFileURL(basin: basin, year: year)
+        let urlString = "\(baseURL)/ibtracs.\(basin.rawValue).list.v04r01.csv"
 
-        var sliceData: Data?
-        do {
-            sliceData = try await fetchYearSlice(urlString: urlString, year: year, onPhase: onPhase)
-        } catch APIError.rangeNotSupported {
-            sliceData = nil
-        }
-        if let sliceData {
-            try sliceData.write(to: fileURL)
+        if FileManager.default.fileExists(atPath: cacheURL.path) {
+            onPhase("已使用本地缓存: \(year) 年 \(basin.displayName)…")
         } else {
-            onPhase("服务器不支持分段下载,正在下载完整海盆数据(可能较慢)…")
-            try await APIClient.shared.download(to: fileURL, from: urlString)
+            do {
+                let data = try await fetchYearSlice(urlString: urlString, year: year, onPhase: onPhase)
+                try data.write(to: cacheURL)
+            } catch APIError.rangeNotSupported {
+                onPhase("服务器不支持分段下载,正在下载完整海盆数据(可能较慢)…")
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(basin.rawValue)-\(year)-full.csv")
+                defer { try? FileManager.default.removeItem(at: tempURL) }
+                try await APIClient.shared.download(to: tempURL, from: urlString)
+                onPhase("正在解析 \(year) 年 \(basin.displayName) 气旋…")
+                return try await Task.detached {
+                    try parseHistoricalFile(at: tempURL, year: year, basin: basin)
+                }.value
+            }
         }
+
         onPhase("正在解析 \(year) 年 \(basin.displayName) 气旋…")
-        return try await Task.detached {
-            try parseHistoricalFile(at: fileURL, year: year, basin: basin)
-        }.value
+        do {
+            return try await Task.detached {
+                try parseHistoricalFile(at: cacheURL, year: year, basin: basin)
+            }.value
+        } catch {
+            try? FileManager.default.removeItem(at: cacheURL)
+            throw error
+        }
+    }
+
+    static func prefetchRecentYears(
+        basin: CycloneBasin,
+        years: [Int],
+        onPhase: @escaping @Sendable (String) -> Void
+    ) async throws {
+        let urlString = "\(baseURL)/ibtracs.\(basin.rawValue).list.v04r01.csv"
+        var downloaded = 0
+        var skipped = 0
+        for year in years {
+            try Task.checkCancellation()
+            let cacheURL = cacheFileURL(basin: basin, year: year)
+            if FileManager.default.fileExists(atPath: cacheURL.path) {
+                skipped += 1
+                continue
+            }
+            onPhase("正在缓存 \(year) 年 \(basin.displayName)(\(downloaded + 1)/\(years.count))…")
+            do {
+                let data = try await fetchYearSlice(urlString: urlString, year: year, onPhase: { _ in })
+                try data.write(to: cacheURL)
+                downloaded += 1
+            } catch APIError.rangeNotSupported {
+                onPhase("缓存完成: 新下载 \(downloaded) 年,已存在 \(skipped) 年")
+                return
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                // 单个年份下载失败则跳过,继续其他年份
+            }
+        }
+        onPhase("缓存完成: 新下载 \(downloaded) 年,已存在 \(skipped) 年")
     }
 
     private static func fetchYearSlice(

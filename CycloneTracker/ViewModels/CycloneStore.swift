@@ -22,6 +22,10 @@ final class CycloneStore {
     var selectedDate: Date = Date()
     var selectedBasin: CycloneBasin = .wp
     var didLoadHistorical = false
+    var isCachingRecent = false
+    var cachingMessage = ""
+
+    private var prefetchTask: Task<Void, Never>?
 
     var historicalDateRange: ClosedRange<Date> {
         let calendar = Calendar.current
@@ -118,6 +122,35 @@ final class CycloneStore {
         } else {
             await loadHistorical()
         }
+    }
+
+    func cacheRecentYears(basins: [CycloneBasin], count: Int = 10) {
+        prefetchTask?.cancel()
+        isCachingRecent = true
+        cachingMessage = "准备缓存…"
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let years = Array(max(1851, currentYear - count + 1)...currentYear)
+        prefetchTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                for basin in basins {
+                    try await IBTrACSService.prefetchRecentYears(basin: basin, years: years) { phase in
+                        Task { @MainActor [weak self] in
+                            self?.cachingMessage = phase
+                        }
+                    }
+                }
+            } catch is CancellationError {
+                cachingMessage = "缓存已取消"
+            } catch {
+                cachingMessage = "缓存失败: \(error.localizedDescription)"
+            }
+            isCachingRecent = false
+        }
+    }
+
+    func cancelCaching() {
+        prefetchTask?.cancel()
     }
 
     private func enrichWithActiveRows(_ cyclones: [Cyclone], rows: [IBTrACSService.ActiveRow]) -> [Cyclone] {

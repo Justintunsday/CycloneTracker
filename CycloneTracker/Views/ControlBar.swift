@@ -15,35 +15,64 @@ struct ControlBar: View {
             .pickerStyle(.segmented)
 
             if store.mode == .historical {
-                HStack(spacing: 10) {
-                    DatePicker(
-                        "日期",
-                        selection: $store.selectedDate,
-                        in: store.historicalDateRange,
-                        displayedComponents: .date
-                    )
-                    .labelsHidden()
+                VStack(spacing: 8) {
+                    HStack(spacing: 10) {
+                        DatePicker(
+                            "日期",
+                            selection: $store.selectedDate,
+                            in: store.historicalDateRange,
+                            displayedComponents: .date
+                        )
+                        .labelsHidden()
 
-                    Menu {
-                        Picker("海盆", selection: $store.selectedBasin) {
-                            ForEach(CycloneBasin.allCases) { basin in
-                                Text(basin.displayName).tag(basin)
+                        Menu {
+                            Picker("海盆", selection: $store.selectedBasin) {
+                                ForEach(CycloneBasin.allCases) { basin in
+                                    Text(basin.displayName).tag(basin)
+                                }
                             }
+                        } label: {
+                            Label(store.selectedBasin.displayName, systemImage: "globe.asia.australia.fill")
+                                .font(.subheadline)
                         }
-                    } label: {
-                        Label(store.selectedBasin.displayName, systemImage: "globe.asia.australia.fill")
-                            .font(.subheadline)
+
+                        Spacer()
+
+                        Menu {
+                            Button("缓存当前海盆近10年") {
+                                store.cacheRecentYears(basins: [store.selectedBasin])
+                            }
+                            Button("缓存全部海盆近10年") {
+                                store.cacheRecentYears(basins: CycloneBasin.allCases)
+                            }
+                        } label: {
+                            Image(systemName: "arrow.down.circle")
+                        }
+
+                        Button(action: onFit) {
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        }
+                        Button {
+                            showList = true
+                        } label: {
+                            Image(systemName: "list.bullet")
+                        }
                     }
 
-                    Spacer()
-
-                    Button(action: onFit) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    }
-                    Button {
-                        showList = true
-                    } label: {
-                        Image(systemName: "list.bullet")
+                    if store.isCachingRecent {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(store.cachingMessage)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            Spacer()
+                            Button("取消") {
+                                store.cancelCaching()
+                            }
+                            .font(.caption2)
+                        }
                     }
                 }
             } else {
