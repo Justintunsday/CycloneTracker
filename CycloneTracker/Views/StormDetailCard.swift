@@ -112,12 +112,9 @@ struct StormDetailCard: View {
             let location = CLLocation(latitude: latitude, longitude: longitude)
             guard let request = MKReverseGeocodingRequest(location: location) else { return nil }
             guard let items = try? await request.mapItems, let item = items.first else { return nil }
-            let placemark = item.placemark
             var components: [String] = []
-            if let ocean = placemark.ocean { components.append(ocean) }
             if let name = item.name { components.append(name) }
-            if let locality = placemark.locality { components.append(locality) }
-            if let country = placemark.country { components.append(country) }
+            if let full = item.address?.fullAddress, full != item.name { components.append(full) }
             return components
         }.value
         placeName = parts.map { $0.joined(separator: " · ") }
