@@ -24,50 +24,49 @@ struct IBTrACSService: Sendable {
         return parseActiveCSV(text)
     }
 
+    static let probeChunkSize = 64 * 1024
+
+    // IBTrACS v04r01 list CSV 固定列(以真实文件表头校验)
+    static let columnSID = 0
+    static let columnSeason = 1
+    static let columnBasin = 3
+    static let columnName = 5
+    static let columnTime = 6
+    static let columnLat = 8
+    static let columnLon = 9
+    static let columnWmoWind = 10
+    static let columnWmoPres = 11
+    static let columnUsaAtcfID = 18
+    static let columnUsaStatus = 22
+    static let columnUsaWind = 23
+    static let columnUsaPres = 24
+
     static func parseActiveCSV(_ text: String) -> [ActiveRow] {
         let lines = text.components(separatedBy: .newlines)
         guard lines.count > 2 else { return [] }
-        let header = CSVParser.fields(in: lines[0])
-        let columnIndex = Dictionary(uniqueKeysWithValues: header.enumerated().map { ($1, $0) })
-        guard let sidIndex = columnIndex["SID"],
-              let basinIndex = columnIndex["BASIN"],
-              let nameIndex = columnIndex["NAME"],
-              let timeIndex = columnIndex["ISO_TIME"],
-              let latIndex = columnIndex["LAT"],
-              let lonIndex = columnIndex["LON"],
-              let wmoWindIndex = columnIndex["WMO_WIND"],
-              let wmoPresIndex = columnIndex["WMO_PRES"],
-              let usaAtcfIndex = columnIndex["USA_ATCF_ID"],
-              let usaWindIndex = columnIndex["USA_WIND"],
-              let usaPresIndex = columnIndex["USA_PRES"],
-              let usaStatusIndex = columnIndex["USA_STATUS"]
-        else { return [] }
-
         var rows: [ActiveRow] = []
         for line in lines.dropFirst(2) where !line.isEmpty {
             let fields = CSVParser.fields(in: line)
-            guard fields.count > max(sidIndex, basinIndex, nameIndex, timeIndex, latIndex, lonIndex, usaAtcfIndex) else { continue }
-            guard let lat = Double(fields[latIndex]), let lon = Double(fields[lonIndex]) else { continue }
-            guard let date = DateParsing.ibtracsFormatter.date(from: fields[timeIndex]) else { continue }
-            let wind = Int(fields[wmoWindIndex]) ?? Int(fields[usaWindIndex])
-            let pressure = Int(fields[wmoPresIndex]) ?? Int(fields[usaPresIndex])
+            guard fields.count > columnUsaPres else { continue }
+            guard let lat = Double(fields[columnLat]), let lon = Double(fields[columnLon]) else { continue }
+            guard let date = DateParsing.ibtracsFormatter.date(from: fields[columnTime]) else { continue }
+            let wind = Int(fields[columnWmoWind]) ?? Int(fields[columnUsaWind])
+            let pressure = Int(fields[columnWmoPres]) ?? Int(fields[columnUsaPres])
             rows.append(ActiveRow(
-                sid: fields[sidIndex],
-                name: fields[nameIndex],
-                basin: fields[basinIndex],
-                atcfID: fields[usaAtcfIndex],
+                sid: fields[columnSID],
+                name: fields[columnName],
+                basin: fields[columnBasin],
+                atcfID: fields[columnUsaAtcfID],
                 latitude: lat,
                 longitude: lon,
                 windKnots: wind,
                 pressureMB: pressure,
-                status: fields[usaStatusIndex],
+                status: fields[columnUsaStatus],
                 date: date
             ))
         }
         return rows
     }
-
-    static let probeChunkSize = 64 * 1024
 
     static func historicalCyclones(
         year: Int,
@@ -113,7 +112,10 @@ struct IBTrACSService: Sendable {
         let lo = max(0, start - probeChunkSize)
         let hi = min(totalSize - 1, end + probeChunkSize)
         onPhase("正在下载 \(year) 年数据(分段,约几百 KB)…")
-        let (data, _) = try await APIClient.shared.rangeData(from: urlString, range: "bytes=\(lo)-\(hi)")
+        var (data, _) = try await APIClient.shared.rangeData(from: urlString, range: "bytes=\(lo)-\(hi)")
+        if let firstNewline = data.firstIndex(of: 0x0A) {
+            data = data.subdata(in: data.index(after: firstNewline)..<data.endIndex)
+        }
         return data
     }
 
@@ -167,9 +169,6 @@ struct IBTrACSService: Sendable {
         defer { try? handle.close() }
 
         var storms: [String: StormAccumulator] = [:]
-        var headerColumns: [String: Int] = [:]
-        var headerLoaded = false
-        var skipUnitsLine = false
         var buffer = Data()
         let chunkSize = 1 << 20
 
@@ -180,47 +179,23 @@ struct IBTrACSService: Sendable {
                 buffer.removeSubrange(buffer.startIndex...newline)
                 guard let line = String(data: lineData, encoding: .utf8) else { continue }
 
-                if !headerLoaded {
-                    headerColumns = Dictionary(uniqueKeysWithValues: CSVParser.fields(in: line).enumerated().map { ($1, $0) })
-                    headerLoaded = true
-                    skipUnitsLine = true
-                    continue
-                }
-                if skipUnitsLine {
-                    skipUnitsLine = false
-                    continue
-                }
-
-                guard let sidIndex = headerColumns["SID"],
-                      let seasonIndex = headerColumns["SEASON"],
-                      let basinIndex = headerColumns["BASIN"],
-                      let nameIndex = headerColumns["NAME"],
-                      let timeIndex = headerColumns["ISO_TIME"],
-                      let latIndex = headerColumns["LAT"],
-                      let lonIndex = headerColumns["LON"],
-                      let wmoWindIndex = headerColumns["WMO_WIND"],
-                      let wmoPresIndex = headerColumns["WMO_PRES"],
-                      let usaWindIndex = headerColumns["USA_WIND"],
-                      let usaPresIndex = headerColumns["USA_PRES"]
-                else { continue }
-
                 let fields = CSVParser.fields(in: line)
-                guard fields.count > max(sidIndex, seasonIndex, basinIndex, nameIndex, timeIndex, latIndex, lonIndex) else { continue }
-                guard Int(fields[seasonIndex]) == year else { continue }
-                guard let rowBasin = CycloneBasin.fromIBTrACS(fields[basinIndex]), rowBasin == basin else { continue }
-                guard let lat = Double(fields[latIndex]), let lon = Double(fields[lonIndex]) else { continue }
-                guard let date = DateParsing.ibtracsFormatter.date(from: fields[timeIndex]) else { continue }
+                guard fields.count > columnUsaPres else { continue }
+                guard Int(fields[columnSeason]) == year else { continue }
+                guard let rowBasin = CycloneBasin.fromIBTrACS(fields[columnBasin]), rowBasin == basin else { continue }
+                guard let lat = Double(fields[columnLat]), let lon = Double(fields[columnLon]) else { continue }
+                guard let date = DateParsing.ibtracsFormatter.date(from: fields[columnTime]) else { continue }
 
-                let wind = Int(fields[wmoWindIndex]) ?? Int(fields[usaWindIndex])
-                let pressure = Int(fields[wmoPresIndex]) ?? Int(fields[usaPresIndex])
-                var storm = storms[fields[sidIndex]] ?? StormAccumulator()
+                let wind = Int(fields[columnWmoWind]) ?? Int(fields[columnUsaWind])
+                let pressure = Int(fields[columnWmoPres]) ?? Int(fields[columnUsaPres])
+                var storm = storms[fields[columnSID]] ?? StormAccumulator()
                 if storm.sid.isEmpty {
-                    storm.sid = fields[sidIndex]
-                    storm.name = fields[nameIndex]
+                    storm.sid = fields[columnSID]
+                    storm.name = fields[columnName]
                     storm.basin = rowBasin
                 }
                 storm.points.append(TrackPoint(
-                    id: "\(fields[sidIndex])-\(fields[timeIndex])",
+                    id: "\(fields[columnSID])-\(fields[columnTime])",
                     date: date,
                     latitude: lat,
                     longitude: lon,
@@ -228,7 +203,7 @@ struct IBTrACSService: Sendable {
                     pressureMB: pressure,
                     category: StormCategory.fromWind(knots: wind ?? 0)
                 ))
-                storms[fields[sidIndex]] = storm
+                storms[fields[columnSID]] = storm
             }
         }
 
