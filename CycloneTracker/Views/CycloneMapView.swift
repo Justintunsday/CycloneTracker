@@ -79,7 +79,9 @@ struct CycloneMapView: View {
                             store.cancelCaching()
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.caption)
+                                .font(.system(size: 16))
+                                .frame(width: 28, height: 28)
+                                .contentShape(Circle())
                         }
                     }
                     .padding(.horizontal, 14)

@@ -8,15 +8,16 @@ struct MapSideControls: View {
     @State private var isExpanded = false
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Button {
                 withAnimation(.spring(duration: 0.45, bounce: 0.3)) {
                     isExpanded.toggle()
                 }
             } label: {
                 Image(systemName: isExpanded ? "xmark" : "line.3.horizontal")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(width: 34, height: 34)
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(CircleGlassButtonStyle())
             .circleGlass()
@@ -54,12 +55,13 @@ struct MapSideControls: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             if store.mode == .active {
                 Button(action: toggleMode) {
                     Image(systemName: "hurricane")
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(width: 34, height: 34)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(CircleGlassButtonStyle())
                 .circleGlass()
@@ -67,8 +69,9 @@ struct MapSideControls: View {
             } else {
                 Button(action: toggleMode) {
                     Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(width: 34, height: 34)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(CircleGlassButtonStyle())
                 .circleGlass(tintOpacity: 0.28)
@@ -80,8 +83,9 @@ struct MapSideControls: View {
                     showDatePicker = true
                 } label: {
                     Image(systemName: "calendar")
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(width: 34, height: 34)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(CircleGlassButtonStyle())
                 .circleGlass()
@@ -96,8 +100,9 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "globe.asia.australia.fill")
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(width: 34, height: 34)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .circleGlass()
                 .accessibilityLabel("选择海盆")
@@ -112,8 +117,9 @@ struct MapSideControls: View {
                     }
                 } label: {
                     Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(width: 34, height: 34)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .circleGlass()
                 .accessibilityLabel("缓存近10年数据")
@@ -123,8 +129,9 @@ struct MapSideControls: View {
                     Task { await store.refreshActive() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(width: 34, height: 34)
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(CircleGlassButtonStyle())
                 .circleGlass()
@@ -134,8 +141,9 @@ struct MapSideControls: View {
 
             Button(action: onFit) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(width: 34, height: 34)
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(CircleGlassButtonStyle())
             .circleGlass()
@@ -145,8 +153,9 @@ struct MapSideControls: View {
                 showList = true
             } label: {
                 Image(systemName: "list.bullet")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(width: 34, height: 34)
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(CircleGlassButtonStyle())
             .circleGlass()
