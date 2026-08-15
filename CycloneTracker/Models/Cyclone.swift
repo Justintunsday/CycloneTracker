@@ -166,6 +166,24 @@ struct Cyclone: Identifiable, Hashable, Sendable {
     var displayName: String {
         name.isEmpty || name.uppercased() == "UNNAMED" ? "未命名 \(basin.rawValue)" : name
     }
+
+    func with(isActive: Bool) -> Cyclone {
+        Cyclone(
+            id: id,
+            name: name,
+            basin: basin,
+            source: source,
+            isActive: isActive,
+            windKnots: windKnots,
+            pressureMB: pressureMB,
+            category: category,
+            latitude: latitude,
+            longitude: longitude,
+            date: date,
+            track: track,
+            forecast: forecast
+        )
+    }
 }
 
 struct CycloneSelection: MapSelectable {

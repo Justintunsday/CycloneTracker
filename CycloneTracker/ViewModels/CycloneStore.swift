@@ -56,6 +56,7 @@ final class CycloneStore {
                 .filter { JTWCService.isJTWCKey($0.atcfID.lowercased()) }
                 .map { $0.atcfID.lowercased() })
             storms += stormsFromActiveRows(rows, excluding: nhcIDs.union(jtwcKeys))
+            storms = markActivity(storms, rows: rows)
             activeCyclones = storms.filter(\.isActive).sorted { $0.category > $1.category }
             lastRefresh = Date()
             errorMessage = nil
@@ -182,6 +183,19 @@ final class CycloneStore {
         }
     }
 
+    private func markActivity(_ cyclones: [Cyclone], rows: [IBTrACSService.ActiveRow]) -> [Cyclone] {
+        let maxRowDate = rows.map(\.date).max() ?? Date()
+        let now = Date()
+        return cyclones.map { cyclone in
+            guard cyclone.source != .nhc else { return cyclone }
+            let lastFix = cyclone.track.last?.date ?? cyclone.date
+            let behindLatest = maxRowDate.timeIntervalSince(lastFix)
+            let freshEnough = now.timeIntervalSince(lastFix) <= 96 * 3600
+            let active = behindLatest < 18 * 3600 && freshEnough
+            return active == cyclone.isActive ? cyclone : cyclone.with(isActive: active)
+        }
+    }
+
     private func stormsFromActiveRows(
         _ rows: [IBTrACSService.ActiveRow],
         excluding handledAtcfIDs: Set<String>
@@ -198,13 +212,12 @@ final class CycloneStore {
             let pressure = stormRows.compactMap(\.pressureMB).min() ?? 0
             let category = track.map(\.category).max() ?? .disturbance
             let basin = CycloneBasin.fromIBTrACS(stormRows.first?.basin ?? "") ?? .na
-            let isActive = last.date.timeIntervalSinceNow > -72 * 3600
             extra.append(Cyclone(
                 id: "IB-\(sid)",
                 name: stormRows.first?.name ?? "",
                 basin: basin,
                 source: .ibtracs,
-                isActive: isActive,
+                isActive: true,
                 windKnots: wind,
                 pressureMB: pressure,
                 category: category,
