@@ -6,7 +6,9 @@ struct ContentView: View {
     var body: some View {
         TabView {
             Tab("地图", systemImage: "map") {
-                CycloneMapView(store: store)
+                NavigationStack {
+                    CycloneMapView(store: store)
+                }
             }
             Tab("设置", systemImage: "gearshape") {
                 SettingsView()

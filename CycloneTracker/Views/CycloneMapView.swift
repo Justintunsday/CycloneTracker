@@ -6,6 +6,8 @@ struct CycloneMapView: View {
     @State private var position: MapCameraPosition = .automatic
     @State private var selection: CycloneSelection?
     @State private var didInitialFit = false
+    @State private var showList = false
+    @State private var showDatePicker = false
 
     var body: some View {
         Map(position: $position, selection: $selection) {
@@ -61,10 +63,90 @@ struct CycloneMapView: View {
                 fitAll()
             }
         }
-        .overlay(alignment: .topLeading) {
-            MapSideControls(store: store, onFit: fitAll)
-                .padding(.top, 8)
-                .padding(.leading, 8)
+        .toolbar {
+            ToolbarItemGroup(placement: .bottomBar) {
+                if store.mode == .active {
+                    Button(action: toggleMode) {
+                        Image(systemName: "hurricane")
+                    }
+                    .accessibilityLabel("切换至历史模式")
+                } else {
+                    Button(action: toggleMode) {
+                        Image(systemName: "clock.arrow.circlepath")
+                    }
+                    .accessibilityLabel("切换至实时模式")
+                }
+
+                if store.mode == .historical {
+                    Button {
+                        showDatePicker = true
+                    } label: {
+                        Image(systemName: "calendar")
+                    }
+                    .accessibilityLabel("选择日期")
+
+                    Menu {
+                        Picker("海盆", selection: $store.selectedBasin) {
+                            ForEach(CycloneBasin.allCases) { basin in
+                                Text(basin.displayName).tag(basin)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "globe.asia.australia.fill")
+                    }
+                    .accessibilityLabel("选择海盆")
+
+                    Menu {
+                        Button("缓存当前海盆近10年") {
+                            store.cacheRecentYears(basins: [store.selectedBasin])
+                        }
+                        Button("缓存全部海盆近10年") {
+                            store.cacheRecentYears(basins: CycloneBasin.allCases)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.down.circle")
+                    }
+                    .accessibilityLabel("缓存近10年数据")
+                } else {
+                    Button {
+                        Task { await store.refreshActive() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .accessibilityLabel("刷新实时数据")
+                }
+            }
+
+            ToolbarItemGroup(placement: .bottomBar) {
+                Button(action: fitAll) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                }
+                .accessibilityLabel("缩放至全部气旋")
+
+                Button {
+                    showList = true
+                } label: {
+                    Image(systemName: "list.bullet")
+                }
+                .accessibilityLabel("气旋列表")
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .onChange(of: store.selectedDate) { _, _ in
+            if store.mode == .historical {
+                Task { await store.loadHistorical() }
+            }
+        }
+        .onChange(of: store.selectedBasin) { _, _ in
+            if store.mode == .historical {
+                Task { await store.loadHistorical() }
+            }
+        }
+        .sheet(isPresented: $showDatePicker) {
+            DatePickerSheet(store: store)
+        }
+        .sheet(isPresented: $showList) {
+            StormListView(store: store)
         }
         .overlay(alignment: .bottomTrailing) {
             Group {
@@ -146,6 +228,13 @@ struct CycloneMapView: View {
             }
         } message: {
             Text(store.errorMessage ?? "")
+        }
+    }
+
+    private func toggleMode() {
+        store.mode = store.mode == .active ? .historical : .active
+        if store.mode == .historical, store.historicalCyclones.isEmpty {
+            Task { await store.loadHistorical() }
         }
     }
 
