@@ -8,9 +8,12 @@ struct CycloneMapView: View {
     @State private var didInitialFit = false
     @State private var showList = false
     @State private var showDatePicker = false
+    @State private var locationService = UserLocationService()
+    @State private var pendingFocus = false
 
     var body: some View {
         Map(position: $position, selection: $selection) {
+            UserAnnotation()
             ForEach(store.displayedCyclones) { cyclone in
                 let isSelected = store.selectedCyclone?.id == cyclone.id
                 let lineColor = store.mode == .historical
@@ -39,7 +42,6 @@ struct CycloneMapView: View {
         .mapControls {
             MapCompass()
             MapScaleView()
-            MapUserLocationButton()
         }
         .onChange(of: selection) { _, newValue in
             if let newValue {
@@ -62,6 +64,11 @@ struct CycloneMapView: View {
                 didInitialFit = true
                 fitAll()
             }
+        }
+        .onChange(of: locationService.lastLocation) { _, newValue in
+            guard pendingFocus, let newValue else { return }
+            pendingFocus = false
+            center(on: newValue.coordinate)
         }
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarLeading) {
@@ -114,10 +121,30 @@ struct CycloneMapView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     .accessibilityLabel("刷新实时数据")
+
+                    Menu {
+                        Picker("海域筛选", selection: $store.activeBasinFilter) {
+                            Text("全部海域").tag(CycloneBasin?.none)
+                            ForEach(CycloneBasin.allCases) { basin in
+                                Text(basin.displayName).tag(Optional(basin))
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "water.waves")
+                    }
+                    .accessibilityLabel("筛选海域")
                 }
             }
 
             ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button {
+                    pendingFocus = true
+                    locationService.requestAndFocus()
+                } label: {
+                    Image(systemName: "location.fill")
+                }
+                .accessibilityLabel("定位到当前位置")
+
                 Button(action: fitAll) {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                 }

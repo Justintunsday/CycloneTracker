@@ -14,6 +14,7 @@ final class CycloneStore {
     var activeCyclones: [Cyclone] = []
     var historicalCyclones: [Cyclone] = []
     var selectedCyclone: Cyclone?
+    var activeBasinFilter: CycloneBasin?
     var isLoading = false
     var loadingMessage = ""
     var errorMessage: String?
@@ -35,7 +36,11 @@ final class CycloneStore {
     }
 
     var displayedCyclones: [Cyclone] {
-        mode == .active ? activeCyclones : historicalCyclones
+        if mode == .active {
+            guard let filter = activeBasinFilter else { return activeCyclones }
+            return activeCyclones.filter { $0.basin == filter }
+        }
+        return historicalCyclones
     }
 
     func refreshActive() async {
