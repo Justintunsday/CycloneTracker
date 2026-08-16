@@ -199,7 +199,7 @@ struct CycloneMapView: View {
             }
             .animation(.spring(duration: 0.4, bounce: 0.2), value: store.selectedCyclone?.id)
         }
-        .scrollEdgeEffectStyle(.automatic, for: .bottom)
+        .scrollEdgeEffectStyle(.hard, for: .bottom)
         .overlay(alignment: .center) {
             if store.isLoading {
                 VStack(spacing: 12) {
