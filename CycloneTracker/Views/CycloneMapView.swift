@@ -154,6 +154,17 @@ struct CycloneMapView: View {
         .sheet(isPresented: $showList) {
             StormListView(store: store)
         }
+        .overlay(alignment: .top) {
+            if store.mode == .active, let note = store.dataStalenessNote {
+                Text(note)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .glassEffect(.regular.tint(.oceanGlass.opacity(0.06)), in: Capsule())
+                    .padding(.top, 4)
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             Group {
                 if store.isCachingRecent {

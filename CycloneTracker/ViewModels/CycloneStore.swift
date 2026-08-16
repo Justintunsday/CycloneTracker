@@ -19,6 +19,7 @@ final class CycloneStore {
     var loadingMessage = ""
     var errorMessage: String?
     var lastRefresh: Date?
+    var dataStalenessNote: String?
 
     var selectedDate: Date = Date()
     var selectedBasin: CycloneBasin = .wp
@@ -64,6 +65,11 @@ final class CycloneStore {
             storms = markActivity(storms, rows: rows)
             activeCyclones = storms.filter(\.isActive).sorted { $0.category > $1.category }
             lastRefresh = Date()
+            let maxRowDate = rows.map(\.date).max() ?? Date()
+            let stalenessHours = Date().timeIntervalSince(maxRowDate) / 3600
+            dataStalenessNote = stalenessHours > 24
+                ? "JTWC/IBTrACS 数据更新至 \(maxRowDate.formatted(date: .abbreviated, time: .shortened)),部分海盆可能滞后"
+                : nil
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -195,7 +201,7 @@ final class CycloneStore {
             guard cyclone.source != .nhc else { return cyclone }
             let lastFix = cyclone.track.last?.date ?? cyclone.date
             let behindLatest = maxRowDate.timeIntervalSince(lastFix)
-            let freshEnough = now.timeIntervalSince(lastFix) <= 96 * 3600
+            let freshEnough = now.timeIntervalSince(lastFix) <= 60 * 3600
             let active = behindLatest < 18 * 3600 && freshEnough
             return active == cyclone.isActive ? cyclone : cyclone.with(isActive: active)
         }
