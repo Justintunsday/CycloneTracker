@@ -179,23 +179,27 @@ struct CycloneMapView: View {
                 }
             }
             .padding(.trailing, 12)
-            .padding(.bottom, store.selectedCyclone != nil ? 240 : 4)
+            .padding(.bottom, 8)
             .animation(.spring(duration: 0.5, bounce: 0.25), value: store.isCachingRecent)
         }
-        .overlay(alignment: .bottom) {
-            if let cyclone = store.selectedCyclone {
-                StormDetailCard(
-                    cyclone: cyclone,
-                    onLocate: { center(on: cyclone.coordinate) },
-                    onClose: {
-                        selection = nil
-                        store.selectedCyclone = nil
-                    }
-                )
-                .padding(.horizontal)
-                .padding(.bottom, 8)
+        .safeAreaBar(edge: .bottom, spacing: 8) {
+            Group {
+                if let cyclone = store.selectedCyclone {
+                    StormDetailCard(
+                        cyclone: cyclone,
+                        onLocate: { center(on: cyclone.coordinate) },
+                        onClose: {
+                            selection = nil
+                            store.selectedCyclone = nil
+                        }
+                    )
+                    .padding(.horizontal)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .animation(.spring(duration: 0.4, bounce: 0.2), value: store.selectedCyclone?.id)
         }
+        .scrollEdgeEffectStyle(.automatic, for: .bottom)
         .overlay(alignment: .center) {
             if store.isLoading {
                 VStack(spacing: 12) {
