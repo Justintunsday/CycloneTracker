@@ -51,7 +51,7 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
 }
 
 @Observable
-final class AppSettings {
+final class AppSettings: @unchecked Sendable {
     static let shared = AppSettings()
 
     var language: AppLanguage {
