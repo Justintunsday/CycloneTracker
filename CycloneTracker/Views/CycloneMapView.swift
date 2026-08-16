@@ -64,7 +64,7 @@ struct CycloneMapView: View {
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
+            ToolbarItemGroup(placement: .navigationBarLeading) {
                 if store.mode == .active {
                     Button(action: toggleMode) {
                         Image(systemName: "hurricane")
@@ -117,7 +117,7 @@ struct CycloneMapView: View {
                 }
             }
 
-            ToolbarItemGroup(placement: .bottomBar) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button(action: fitAll) {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                 }
@@ -131,7 +131,6 @@ struct CycloneMapView: View {
                 .accessibilityLabel("气旋列表")
             }
         }
-        .toolbarBackground(.hidden, for: .navigationBar)
         .onChange(of: store.selectedDate) { _, _ in
             if store.mode == .historical {
                 Task { await store.loadHistorical() }
