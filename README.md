@@ -11,7 +11,7 @@
 | 大西洋/东北太平洋活跃气旋 | NHC (National Hurricane Center) | `https://www.nhc.noaa.gov/CurrentStorms.json` |
 | NHC 气旋路径与预报 | NHC ATCF A-deck | `https://ftp.nhc.noaa.gov/atcf/aid_public/` (gzip) |
 | 西北太平洋/印度洋/南半球气旋 | JTWC (Joint Typhoon Warning Center) | NHC 托管的 JTWC A-deck + IBTrACS 实时合并的 USA(JTWC) 列 |
-| 历史最佳路径 (1851 至今) | IBTrACS v04r01 (NOAA NCEI) | `ibtracs.ACTIVE` / 分海盆 `ibtracs.{BASIN}.list` CSV,通过 HTTP Range 分段下载 + 二分定位只取所选年份(几百 KB,无需下载 100MB+ 全量文件) |
+| 历史最佳路径 (1851 至今) | IBTrACS v04r01 (NOAA NCEI) | `ibtracs.ACTIVE` / 分海盆 `ibtracs.{BASIN}.list` CSV,通过 HTTP Range 比例估算+分块校准,通常 1–3 个请求即可定位并下载所选年份(约 1MB,无需下载 100MB+ 全量文件) |
 
 ## 功能
 

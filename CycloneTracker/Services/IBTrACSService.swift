@@ -144,7 +144,7 @@ struct IBTrACSService: Sendable {
         onPhase("缓存完成: 新下载 \(downloaded) 年,已存在 \(skipped) 年")
     }
 
-    private static func fetchYearSlice(
+    private     static func fetchYearSlice(
         urlString: String,
         year: Int,
         onPhase: @escaping @Sendable (String) -> Void
@@ -154,55 +154,80 @@ struct IBTrACSService: Sendable {
         if totalSize < 2 * 1024 * 1024 {
             return try await APIClient.shared.data(from: urlString)
         }
-        onPhase("正在定位 \(year) 年数据位置…")
-        let start = try await searchBoundary(urlString: urlString, totalSize: totalSize, season: year)
-        let end = try await searchBoundary(urlString: urlString, totalSize: totalSize, season: year + 1)
-        let lo = max(0, start - probeChunkSize)
-        let hi = min(totalSize - 1, end + probeChunkSize)
-        onPhase("正在下载 \(year) 年数据(分段,约几百 KB)…")
-        var (data, _) = try await APIClient.shared.rangeData(from: urlString, range: "bytes=\(lo)-\(hi)")
+
+        let calendar = Calendar.current
+        let currentYear = calendar.component(.year, from: Date())
+        let firstYear = 1841
+        let yearSpan = max(currentYear - firstYear + 1, 1)
+        let bytesPerYear = Double(totalSize) / Double(yearSpan)
+        let initialChunk = Int(bytesPerYear * 1.2)
+
+        onPhase("正在快速定位 \(year) 年数据…")
+
+        var start = max(0, min(totalSize - 1, Int(Double(year - firstYear) * bytesPerYear - bytesPerYear * 0.4)))
+        var end = min(totalSize, start + initialChunk)
+        var data = Data()
+
+        for _ in 0..<10 {
+            let lo = max(0, start)
+            let hi = min(totalSize - 1, end - 1)
+            guard hi > lo else { break }
+            let (chunk, _) = try await APIClient.shared.rangeData(from: urlString, range: "bytes=\(lo)-\(hi)")
+            data = chunk
+            guard let (minSeason, maxSeason) = seasonRange(in: chunk) else { break }
+
+            if minSeason < year, maxSeason > year { break }
+            if minSeason == year, maxSeason == year {
+                if start > 0 {
+                    start = max(0, start - Int(bytesPerYear * 0.8))
+                    continue
+                }
+                if end < totalSize {
+                    end = min(totalSize, end + Int(bytesPerYear * 0.8))
+                    continue
+                }
+                break
+            }
+            if minSeason == year, start > 0 {
+                start = max(0, start - Int(bytesPerYear * 0.8))
+                continue
+            }
+            if maxSeason == year, end < totalSize {
+                end = min(totalSize, end + Int(bytesPerYear * 0.8))
+                continue
+            }
+            if maxSeason < year {
+                start = min(totalSize - 1, start + Int(Double(year - maxSeason) * bytesPerYear * 0.9))
+                end = min(totalSize, start + initialChunk)
+                continue
+            }
+            if minSeason > year {
+                start = max(0, start - Int(Double(minSeason - year) * bytesPerYear * 0.9))
+                end = start + initialChunk
+                continue
+            }
+            break
+        }
+
         if let firstNewline = data.firstIndex(of: 0x0A) {
             data = data.subdata(in: data.index(after: firstNewline)..<data.endIndex)
         }
         return data
     }
 
-    private static func searchBoundary(urlString: String, totalSize: Int, season: Int) async throws -> Int {
-        var lo = 0
-        var hi = totalSize
-        while lo < hi {
-            let mid = (lo + hi) / 2
-            let midSeason = try await probeSeason(urlString: urlString, at: mid)
-            if let midSeason {
-                if midSeason >= season {
-                    hi = mid
-                } else {
-                    lo = mid + 1
-                }
-            } else {
-                hi = mid
-            }
-        }
-        return lo
-    }
-
-    private static func probeSeason(urlString: String, at offset: Int) async throws -> Int? {
-        let (data, _) = try await APIClient.shared.rangeData(
-            from: urlString,
-            range: "bytes=\(offset)-\(offset + probeChunkSize)"
-        )
-        guard let text = String(data: data, encoding: .utf8) else { return nil }
-        var lines = text.components(separatedBy: "\n")
-        if offset > 0, !lines.isEmpty {
-            lines.removeFirst()
-        }
-        for line in lines.prefix(3) {
+    private static func seasonRange(in chunk: Data) -> (min: Int, max: Int)? {
+        guard let text = String(data: chunk, encoding: .utf8) else { return nil }
+        var minSeason = Int.max
+        var maxSeason = Int.min
+        for line in text.components(separatedBy: "\n") {
             let fields = CSVParser.fields(in: line)
             if fields.count > 1, let season = Int(fields[1]) {
-                return season
+                minSeason = min(minSeason, season)
+                maxSeason = max(maxSeason, season)
             }
         }
-        return nil
+        guard minSeason != Int.max, maxSeason != Int.min else { return nil }
+        return (minSeason, maxSeason)
     }
 
     nonisolated static func parseHistoricalFile(at url: URL, year: Int, basin: CycloneBasin) throws -> [Cyclone] {

@@ -22,17 +22,35 @@ struct NHCService: Sendable {
     static func activeStorms() async throws -> [Cyclone] {
         let data = try await APIClient.shared.data(from: "\(baseURL)/CurrentStorms.json")
         let response = try JSONDecoder().decode(CurrentStormsResponse.self, from: data)
+
+        let tracks = await withTaskGroup(
+            of: (String, (track: [TrackPoint], forecast: [TrackPoint])?).self,
+            returning: [String: (track: [TrackPoint], forecast: [TrackPoint])].self
+        ) { group in
+            for summary in response.activeStorms {
+                let stormID = summary.id
+                group.addTask {
+                    let result = try? await fetchATCF(stormID: stormID)
+                    return (stormID, result)
+                }
+            }
+            var collected: [String: (track: [TrackPoint], forecast: [TrackPoint])] = [:]
+            for await (stormID, result) in group {
+                if let result {
+                    collected[stormID] = result
+                }
+            }
+            return collected
+        }
+
         var storms: [Cyclone] = []
         for summary in response.activeStorms {
             guard let latitude = summary.latitudeNumeric, let longitude = summary.longitudeNumeric else { continue }
             let wind = Int(summary.intensity ?? "") ?? 0
             let pressure = Int(summary.pressure ?? "") ?? 0
-            var track: [TrackPoint] = []
-            var forecast: [TrackPoint] = []
-            if let atcf = try? await fetchATCF(stormID: summary.id) {
-                track = atcf.track
-                forecast = atcf.forecast
-            }
+            let atcf = tracks[summary.id]
+            let track = atcf?.track ?? []
+            let forecast = atcf?.forecast ?? []
             let date = DateParsing.parseISO(summary.lastUpdate ?? "") ?? track.last?.date ?? Date()
             storms.append(Cyclone(
                 id: "NHC-\(summary.id.uppercased())",
