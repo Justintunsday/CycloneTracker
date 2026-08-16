@@ -15,27 +15,7 @@ struct CycloneMapView: View {
         Map(position: $position, selection: $selection) {
             UserAnnotation()
             ForEach(store.displayedCyclones) { cyclone in
-                let isSelected = store.selectedCyclone?.id == cyclone.id
-                let lineColor = store.mode == .historical
-                    ? StormCategory.fromWind(knots: cyclone.peakWindKnots).color
-                    : cyclone.category.color
-                if cyclone.track.count > 1 {
-                    if store.mode == .historical {
-                        MapPolyline(coordinates: cyclone.track.map(\.coordinate))
-                            .stroke(lineColor.opacity(isSelected ? 1.0 : 0.7), lineWidth: isSelected ? 4 : 2)
-                            .tag(CycloneSelection(id: cyclone.id))
-                    } else {
-                        MapPolyline(coordinates: cyclone.track.map(\.coordinate))
-                            .stroke(lineColor.opacity(0.8), lineWidth: isSelected ? 4 : 2)
-                    }
-                }
-                if cyclone.forecast.count > 1 {
-                    MapPolyline(coordinates: cyclone.forecast.map(\.coordinate))
-                        .stroke(.orange.opacity(0.85), style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
-                }
-                Marker(cyclone.displayName, systemImage: "hurricane", coordinate: cyclone.coordinate)
-                    .tint(cyclone.category.color)
-                    .tag(CycloneSelection(id: cyclone.id))
+                cycloneContent(for: cyclone)
             }
         }
         .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
@@ -255,6 +235,31 @@ struct CycloneMapView: View {
         } message: {
             Text(store.errorMessage ?? "")
         }
+    }
+
+    @MapContentBuilder
+    private func cycloneContent(for cyclone: Cyclone) -> some MapContent {
+        let isSelected = store.selectedCyclone?.id == cyclone.id
+        let lineColor = store.mode == .historical
+            ? StormCategory.fromWind(knots: cyclone.peakWindKnots).color
+            : cyclone.category.color
+        if cyclone.track.count > 1 {
+            if store.mode == .historical {
+                MapPolyline(coordinates: cyclone.track.map(\.coordinate))
+                    .stroke(lineColor.opacity(isSelected ? 1.0 : 0.7), lineWidth: isSelected ? 4 : 2)
+                    .tag(CycloneSelection(id: cyclone.id))
+            } else {
+                MapPolyline(coordinates: cyclone.track.map(\.coordinate))
+                    .stroke(lineColor.opacity(0.8), lineWidth: isSelected ? 4 : 2)
+            }
+        }
+        if cyclone.forecast.count > 1 {
+            MapPolyline(coordinates: cyclone.forecast.map(\.coordinate))
+                .stroke(.orange.opacity(0.85), style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
+        }
+        Marker(cyclone.displayName, systemImage: "hurricane", coordinate: cyclone.coordinate)
+            .tint(cyclone.category.color)
+            .tag(CycloneSelection(id: cyclone.id))
     }
 
     private func toggleMode() {
