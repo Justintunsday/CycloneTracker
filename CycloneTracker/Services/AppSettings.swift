@@ -70,8 +70,10 @@ final class AppSettings: @unchecked Sendable {
 
 func L(_ key: String) -> String {
     let settings = AppSettings.shared
-    if let locale = settings.language.locale {
-        return String(localized: String.LocalizationValue(key), locale: locale)
+    let locale: Locale = settings.language.locale ?? .current
+    let languageCode = locale.language.languageCode?.identifier ?? ""
+    if languageCode == "zh" {
+        return key
     }
-    return String(localized: String.LocalizationValue(key))
+    return String(localized: String.LocalizationValue(key), locale: locale)
 }

@@ -35,6 +35,24 @@ xcodebuild -project CycloneTracker.xcodeproj -scheme CycloneTracker \
 
 要求: Xcode 26 / iOS 26 SDK。GitHub Actions(`.github/workflows/ios.yml`)在 `macos-15` runner 上自动编译验证。
 
+## 工程结构
+
+```
+CycloneTracker/
+├── App/                 # App 入口
+├── Models/              # 数据模型(Cyclone / TrackPoint / StormCategory / CycloneBasin / DataSource / CycloneSelection)
+├── Services/            # 数据服务(NHC / JTWC / IBTrACS / 定位 / 应用设置与本地化)
+├── Utilities/           # 基础设施(APIClient / GZip / CSVParser / DateParsing / 设计令牌)
+├── ViewModels/          # CycloneStore(状态与业务逻辑)
+├── Views/
+│   ├── Map/             # 地图视图 / 顶部工具栏 / 缓存气泡 / 日期选择
+│   ├── Detail/          # 气旋详情卡
+│   ├── List/            # 气旋列表
+│   ├── Settings/        # 设置页(语言/外观)
+│   └── ContentView.swift
+└── Localizable.xcstrings # 本地化目录(中/英,设置内实时切换)
+```
+
 ## 免责声明
 
 本 App 仅用于信息展示与学习,不作为防灾决策依据。请以各国官方气象机构发布为准。
