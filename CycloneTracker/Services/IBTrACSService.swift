@@ -197,11 +197,13 @@ struct IBTrACSService: Sendable {
                 continue
             }
             if maxSeason < year {
+                if end >= totalSize { break }
                 start = min(totalSize - 1, start + Int(Double(year - maxSeason) * bytesPerYear * 0.9))
                 end = min(totalSize, start + initialChunk)
                 continue
             }
             if minSeason > year {
+                if start <= 0 { break }
                 start = max(0, start - Int(Double(minSeason - year) * bytesPerYear * 0.9))
                 end = start + initialChunk
                 continue
