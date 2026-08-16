@@ -19,7 +19,7 @@ struct IBTrACSService: Sendable {
     static func fetchActiveRows() async throws -> [ActiveRow] {
         let data = try await APIClient.shared.data(from: "\(baseURL)/ibtracs.ACTIVE.list.v04r01.csv")
         guard let text = String(data: data, encoding: .utf8) else {
-            throw APIError.invalidData("ACTIVE 文件编码无效")
+            throw APIError.invalidData(L("ACTIVE 文件编码无效"))
         }
         return parseActiveCSV(text)
     }
@@ -84,24 +84,24 @@ struct IBTrACSService: Sendable {
         let urlString = "\(baseURL)/ibtracs.\(basin.rawValue).list.v04r01.csv"
 
         if FileManager.default.fileExists(atPath: cacheURL.path) {
-            onPhase("已使用本地缓存: \(year) 年 \(basin.displayName)…")
+            onPhase(String(format: L("已使用本地缓存: %@ 年 %@…"), String(year), basin.displayName))
         } else {
             do {
                 let data = try await fetchYearSlice(urlString: urlString, year: year, onPhase: onPhase)
                 try data.write(to: cacheURL)
             } catch APIError.rangeNotSupported {
-                onPhase("服务器不支持分段下载,正在下载完整海盆数据(可能较慢)…")
+                onPhase(L("服务器不支持分段下载,正在下载完整海盆数据(可能较慢)…"))
                 let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(basin.rawValue)-\(year)-full.csv")
                 defer { try? FileManager.default.removeItem(at: tempURL) }
                 try await APIClient.shared.download(to: tempURL, from: urlString)
-                onPhase("正在解析 \(year) 年 \(basin.displayName) 气旋…")
+                onPhase(String(format: L("正在解析 %@ 年 %@ 气旋…"), String(year), basin.displayName))
                 return try await Task.detached {
                     try parseHistoricalFile(at: tempURL, year: year, basin: basin)
                 }.value
             }
         }
 
-        onPhase("正在解析 \(year) 年 \(basin.displayName) 气旋…")
+        onPhase(String(format: L("正在解析 %@ 年 %@ 气旋…"), String(year), basin.displayName))
         do {
             return try await Task.detached {
                 try parseHistoricalFile(at: cacheURL, year: year, basin: basin)
@@ -127,13 +127,13 @@ struct IBTrACSService: Sendable {
                 skipped += 1
                 continue
             }
-            onPhase("正在缓存 \(year) 年 \(basin.displayName)(\(downloaded + 1)/\(years.count))…")
+            onPhase(String(format: L("正在缓存 %@ 年 %@(%d/%d)…"), String(year), basin.displayName, downloaded + 1, years.count))
             do {
                 let data = try await fetchYearSlice(urlString: urlString, year: year, onPhase: { _ in })
                 try data.write(to: cacheURL)
                 downloaded += 1
             } catch APIError.rangeNotSupported {
-                onPhase("缓存完成: 新下载 \(downloaded) 年,已存在 \(skipped) 年")
+                onPhase(String(format: L("缓存完成: 新下载 %d 年,已存在 %d 年"), downloaded, skipped))
                 return
             } catch is CancellationError {
                 throw CancellationError()
@@ -141,7 +141,7 @@ struct IBTrACSService: Sendable {
                 // 单个年份下载失败则跳过,继续其他年份
             }
         }
-        onPhase("缓存完成: 新下载 \(downloaded) 年,已存在 \(skipped) 年")
+        onPhase(String(format: L("缓存完成: 新下载 %d 年,已存在 %d 年"), downloaded, skipped))
     }
 
     private     static func fetchYearSlice(
@@ -150,7 +150,7 @@ struct IBTrACSService: Sendable {
         onPhase: @escaping @Sendable (String) -> Void
     ) async throws -> Data {
         let (_, total) = try await APIClient.shared.rangeData(from: urlString, range: "bytes=0-0")
-        guard let totalSize = total else { throw APIError.invalidData("无法获取文件大小") }
+        guard let totalSize = total else { throw APIError.invalidData(L("无法获取文件大小")) }
         if totalSize < 2 * 1024 * 1024 {
             return try await APIClient.shared.data(from: urlString)
         }
@@ -162,7 +162,7 @@ struct IBTrACSService: Sendable {
         let bytesPerYear = Double(totalSize) / Double(yearSpan)
         let initialChunk = Int(bytesPerYear * 1.2)
 
-        onPhase("正在快速定位 \(year) 年数据…")
+        onPhase(String(format: L("正在快速定位 %@ 年数据…"), String(year)))
 
         var start = max(0, min(totalSize - 1, Int(Double(year - firstYear) * bytesPerYear - bytesPerYear * 0.4)))
         var end = min(totalSize, start + initialChunk)

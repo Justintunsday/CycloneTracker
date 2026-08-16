@@ -121,7 +121,7 @@ struct JTWCService: Sendable {
         let data = try await APIClient.shared.data(from: "\(atcfBaseURL)/\(fileName)")
         let decompressed = try GZip.decompress(data)
         guard let text = String(data: decompressed, encoding: .utf8) else {
-            throw APIError.invalidData("ATCF 文件编码无效")
+            throw APIError.invalidData(L("ATCF 文件编码无效"))
         }
         return parseJTWCATCF(text)
     }

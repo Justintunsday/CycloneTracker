@@ -25,10 +25,10 @@ struct StormDetailCard: View {
                     HStack(spacing: 6) {
                         Text(cyclone.basin.displayName)
                         Text("·")
-                        Text("来源: \(cyclone.source.displayName)")
+                        Text(String(format: L("来源: %@"), cyclone.source.displayName))
                         if cyclone.isActive {
                             Text("·")
-                            Text("活跃").foregroundStyle(.red)
+                            Text(L("活跃")).foregroundStyle(.red)
                         }
                     }
                     .font(.caption)
@@ -43,13 +43,15 @@ struct StormDetailCard: View {
             }
 
             HStack(spacing: 18) {
-                metric("最大风速", cyclone.windKnots > 0 ? "\(cyclone.windKnots) kt" : "—")
-                metric("换算", "\(cyclone.windKmh) km/h · \(cyclone.windMs) m/s")
-                metric("中心气压", cyclone.pressureMB > 0 ? "\(cyclone.pressureMB) hPa" : "—")
+                metric(L("最大风速"), cyclone.windKnots > 0 ? "\(cyclone.windKnots) kt" : "—")
+                metric(L("换算"), "\(cyclone.windKmh) km/h · \(cyclone.windMs) m/s")
+                metric(L("中心气压"), cyclone.pressureMB > 0 ? "\(cyclone.pressureMB) hPa" : "—")
             }
 
             if !cyclone.isActive, cyclone.peakWindKnots > 0 {
-                Text("巅峰强度: \(cyclone.peakWindKnots) kt · \(cyclone.peakPressureMB) hPa")
+                Text(String(format: L("巅峰强度: %@ kt · %@ hPa"),
+                            String(cyclone.peakWindKnots),
+                            String(cyclone.peakPressureMB)))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -93,12 +95,12 @@ struct StormDetailCard: View {
 
     private var timeText: String {
         if cyclone.isActive {
-            return "定位时间: \(cyclone.date.formatted(date: .abbreviated, time: .shortened))"
+            return String(format: L("定位时间: %@"), cyclone.date.formatted(date: .abbreviated, time: .shortened))
         }
         let start = (cyclone.startDate ?? cyclone.date).formatted(date: .abbreviated, time: .omitted)
         let end = (cyclone.endDate ?? cyclone.date).formatted(date: .abbreviated, time: .omitted)
         let snapshot = cyclone.date.formatted(date: .abbreviated, time: .shortened)
-        return "活动: \(start) – \(end) · 当日: \(snapshot)"
+        return String(format: L("活动: %@ – %@ · 当日: %@"), start, end, snapshot)
     }
 
     private func metric(_ title: String, _ value: String) -> some View {

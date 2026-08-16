@@ -8,7 +8,7 @@ struct DatePickerSheet: View {
         NavigationStack {
             VStack(spacing: 12) {
                 DatePicker(
-                    "日期",
+                    L("日期"),
                     selection: $store.selectedDate,
                     in: store.historicalDateRange,
                     displayedComponents: .date
@@ -18,18 +18,18 @@ struct DatePickerSheet: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("确定")
+                    Text(L("确定"))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
                 }
                 .buttonStyle(.glassProminent)
             }
             .padding()
-            .navigationTitle("选择日期")
+            .navigationTitle(L("选择日期"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button(L("取消")) { dismiss() }
                 }
             }
         }

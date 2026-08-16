@@ -29,7 +29,7 @@ struct StormListView: View {
                         }
                         Spacer()
                         if cyclone.isActive {
-                            Text("活跃")
+                            Text(L("活跃"))
                                 .font(.caption2)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -44,7 +44,7 @@ struct StormListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { dismiss() }
+                    Button(L("完成")) { dismiss() }
                 }
             }
         }
@@ -52,7 +52,10 @@ struct StormListView: View {
 
     private var navigationTitle: String {
         store.mode == .active
-            ? "活跃热带气旋 (\(store.activeCyclones.count))"
-            : "\(store.selectedDate.formatted(date: .abbreviated, time: .omitted)) \(store.selectedBasin.displayName) (\(store.historicalCyclones.count))"
+            ? String(format: L("活跃热带气旋 (%d)"), store.activeCyclones.count)
+            : String(format: L("%@ %@ (%d)"),
+                     store.selectedDate.formatted(date: .abbreviated, time: .omitted),
+                     store.selectedBasin.displayName,
+                     store.historicalCyclones.count)
     }
 }

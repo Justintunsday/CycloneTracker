@@ -5,15 +5,17 @@ struct ContentView: View {
 
     var body: some View {
         TabView {
-            Tab("地图", systemImage: "map") {
+            Tab(L("地图"), systemImage: "map") {
                 NavigationStack {
                     CycloneMapView(store: store)
                 }
             }
-            Tab("设置", systemImage: "gearshape") {
+            Tab(L("设置"), systemImage: "gearshape") {
                 SettingsView()
             }
         }
+        .preferredColorScheme(AppSettings.shared.appearance.colorScheme)
+        .environment(\.locale, AppSettings.shared.language.locale ?? .current)
         .task {
             await store.refreshActive()
         }

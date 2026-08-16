@@ -56,12 +56,12 @@ struct CycloneMapView: View {
                     Button(action: toggleMode) {
                         Image(systemName: "hurricane")
                     }
-                    .accessibilityLabel("切换至历史模式")
+                    .accessibilityLabel(L("切换至历史模式"))
                 } else {
                     Button(action: toggleMode) {
                         Image(systemName: "clock.arrow.circlepath")
                     }
-                    .accessibilityLabel("切换至实时模式")
+                    .accessibilityLabel(L("切换至实时模式"))
                 }
 
                 if store.mode == .historical {
@@ -70,10 +70,10 @@ struct CycloneMapView: View {
                     } label: {
                         Image(systemName: "calendar")
                     }
-                    .accessibilityLabel("选择日期")
+                    .accessibilityLabel(L("选择日期"))
 
                     Menu {
-                        Picker("海盆", selection: $store.selectedBasin) {
+                        Picker(L("海盆"), selection: $store.selectedBasin) {
                             ForEach(CycloneBasin.allCases) { basin in
                                 Text(basin.displayName).tag(basin)
                             }
@@ -81,30 +81,30 @@ struct CycloneMapView: View {
                     } label: {
                         Image(systemName: "globe.asia.australia.fill")
                     }
-                    .accessibilityLabel("选择海盆")
+                    .accessibilityLabel(L("选择海盆"))
 
                     Menu {
-                        Button("缓存当前海盆近10年") {
+                        Button(L("缓存当前海盆近10年")) {
                             store.cacheRecentYears(basins: [store.selectedBasin])
                         }
-                        Button("缓存全部海盆近10年") {
+                        Button(L("缓存全部海盆近10年")) {
                             store.cacheRecentYears(basins: CycloneBasin.allCases)
                         }
                     } label: {
                         Image(systemName: "arrow.down.circle")
                     }
-                    .accessibilityLabel("缓存近10年数据")
+                    .accessibilityLabel(L("缓存近10年数据"))
                 } else {
                     Button {
                         Task { await store.refreshActive() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .accessibilityLabel("刷新实时数据")
+                    .accessibilityLabel(L("刷新实时数据"))
 
                     Menu {
-                        Picker("海域筛选", selection: $store.activeBasinFilter) {
-                            Text("全部海域").tag(CycloneBasin?.none)
+                        Picker(L("海域"), selection: $store.activeBasinFilter) {
+                            Text(L("全部海域")).tag(CycloneBasin?.none)
                             ForEach(CycloneBasin.allCases) { basin in
                                 Text(basin.displayName).tag(Optional(basin))
                             }
@@ -112,7 +112,7 @@ struct CycloneMapView: View {
                     } label: {
                         Image(systemName: "water.waves")
                     }
-                    .accessibilityLabel("筛选海域")
+                    .accessibilityLabel(L("海域筛选"))
                 }
             }
 
@@ -123,19 +123,19 @@ struct CycloneMapView: View {
                 } label: {
                     Image(systemName: "location.fill")
                 }
-                .accessibilityLabel("定位到当前位置")
+                .accessibilityLabel(L("定位到当前位置"))
 
                 Button(action: fitAll) {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                 }
-                .accessibilityLabel("缩放至全部气旋")
+                .accessibilityLabel(L("缩放至全部气旋"))
 
                 Button {
                     showList = true
                 } label: {
                     Image(systemName: "list.bullet")
                 }
-                .accessibilityLabel("气旋列表")
+                .accessibilityLabel(L("气旋列表"))
             }
         }
         .onChange(of: store.selectedDate) { _, _ in
@@ -226,7 +226,9 @@ struct CycloneMapView: View {
                     Image(systemName: "tropicalstorm")
                         .font(.title2)
                         .foregroundStyle(.secondary)
-                    Text("\(store.selectedDate.formatted(date: .abbreviated, time: .omitted)) \(store.selectedBasin.displayName) 无活跃气旋记录")
+                    Text(String(format: L("%@ %@ 无活跃气旋记录"),
+                                 store.selectedDate.formatted(date: .abbreviated, time: .omitted),
+                                 store.selectedBasin.displayName))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -235,16 +237,16 @@ struct CycloneMapView: View {
             }
         }
         .alert(
-            "数据加载失败",
+            L("数据加载失败"),
             isPresented: Binding(
                 get: { store.errorMessage != nil },
                 set: { if !$0 { store.errorMessage = nil } }
             )
         ) {
-            Button("重试") {
+            Button(L("重试")) {
                 Task { await store.retry() }
             }
-            Button("取消", role: .cancel) {
+            Button(L("取消"), role: .cancel) {
                 store.errorMessage = nil
             }
         } message: {

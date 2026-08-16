@@ -10,13 +10,13 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL(let url):
-            return "无效的请求地址: \(url)"
+            return String(format: L("无效的请求地址: %@"), url)
         case .badStatus(let code, let url):
-            return "服务器返回错误 (\(code)): \(url)"
+            return String(format: L("服务器返回错误 (%d): %@"), code, url)
         case .invalidData(let detail):
-            return "数据解析失败: \(detail)"
+            return String(format: L("数据解析失败: %@"), detail)
         case .rangeNotSupported:
-            return "服务器不支持分段下载"
+            return L("服务器不支持分段下载")
         }
     }
 }
@@ -44,7 +44,7 @@ struct APIClient: Sendable {
         request.setValue(range, forHTTPHeaderField: "Range")
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw APIError.invalidData("服务器无响应")
+            throw APIError.invalidData(L("服务器无响应"))
         }
         guard http.statusCode == 206 else {
             if (200...299).contains(http.statusCode) {
@@ -78,7 +78,7 @@ struct APIClient: Sendable {
 enum GZip {
     static func decompress(_ data: Data) throws -> Data {
         guard data.count > 18, data[data.startIndex] == 0x1F, data[data.startIndex + 1] == 0x8B else {
-            throw APIError.invalidData("gzip 文件头无效")
+            throw APIError.invalidData(L("gzip 文件头无效"))
         }
         var offset = 10
         let flags = data[data.startIndex + 3]
@@ -95,7 +95,7 @@ enum GZip {
             offset += 1
         }
         if flags & 0x02 != 0 { offset += 2 }
-        guard offset < data.count else { throw APIError.invalidData("gzip 文件头损坏") }
+        guard offset < data.count else { throw APIError.invalidData(L("gzip 文件头损坏")) }
         let payload = data.subdata(in: offset..<data.count)
         var cursor = 0
         let filter = try InputFilter<Data>(.decompress, using: .zlib) { maxLength in

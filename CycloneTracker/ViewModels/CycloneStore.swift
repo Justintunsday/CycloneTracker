@@ -47,7 +47,7 @@ final class CycloneStore {
     func refreshActive() async {
         guard !isLoading else { return }
         isLoading = true
-        loadingMessage = "正在获取全球热带气旋数据…"
+        loadingMessage = L("正在获取全球热带气旋数据…")
         errorMessage = nil
         defer { isLoading = false }
         do {
@@ -68,7 +68,8 @@ final class CycloneStore {
             let maxRowDate = rows.map(\.date).max() ?? Date()
             let stalenessHours = Date().timeIntervalSince(maxRowDate) / 3600
             dataStalenessNote = stalenessHours > 24
-                ? "JTWC/IBTrACS 数据更新至 \(maxRowDate.formatted(date: .abbreviated, time: .shortened)),部分海盆可能滞后"
+                ? String(format: L("JTWC/IBTrACS 数据更新至 %@,部分海盆可能滞后"),
+                         maxRowDate.formatted(date: .abbreviated, time: .shortened))
                 : nil
             if let selected = selectedCyclone, !displayedCyclones.contains(where: { $0.id == selected.id }) {
                 selectedCyclone = nil
@@ -145,7 +146,7 @@ final class CycloneStore {
     func cacheRecentYears(basins: [CycloneBasin], count: Int = 10) {
         prefetchTask?.cancel()
         isCachingRecent = true
-        cachingMessage = "准备缓存…"
+        cachingMessage = L("准备缓存…")
         let currentYear = Calendar.current.component(.year, from: Date())
         let years = Array(max(1851, currentYear - count + 1)...currentYear)
         prefetchTask = Task { [weak self] in
@@ -159,9 +160,9 @@ final class CycloneStore {
                     }
                 }
             } catch is CancellationError {
-                cachingMessage = "缓存已取消"
+                cachingMessage = L("缓存已取消")
             } catch {
-                cachingMessage = "缓存失败: \(error.localizedDescription)"
+                cachingMessage = String(format: L("缓存失败: %@"), error.localizedDescription)
             }
             isCachingRecent = false
         }

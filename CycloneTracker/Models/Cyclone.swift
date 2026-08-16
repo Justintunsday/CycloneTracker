@@ -16,13 +16,13 @@ enum CycloneBasin: String, CaseIterable, Identifiable, Codable, Sendable {
 
     var displayName: String {
         switch self {
-        case .na: return "北大西洋"
-        case .ep: return "东北太平洋"
-        case .wp: return "西北太平洋"
-        case .ni: return "北印度洋"
-        case .si: return "南印度洋"
-        case .sp: return "南太平洋"
-        case .sa: return "南大西洋"
+        case .na: return L("北大西洋")
+        case .ep: return L("东北太平洋")
+        case .wp: return L("西北太平洋")
+        case .ni: return L("北印度洋")
+        case .si: return L("南印度洋")
+        case .sp: return L("南太平洋")
+        case .sa: return L("南大西洋")
         }
     }
 
@@ -59,14 +59,14 @@ enum StormCategory: Int, Comparable, Sendable {
 
     var displayName: String {
         switch self {
-        case .disturbance: return "热带扰动"
-        case .depression: return "热带低压"
-        case .storm: return "热带风暴"
-        case .category1: return "一级气旋"
-        case .category2: return "二级气旋"
-        case .category3: return "三级气旋"
-        case .category4: return "四级气旋"
-        case .category5: return "五级气旋"
+        case .disturbance: return L("热带扰动")
+        case .depression: return L("热带低压")
+        case .storm: return L("热带风暴")
+        case .category1: return L("一级气旋")
+        case .category2: return L("二级气旋")
+        case .category3: return L("三级气旋")
+        case .category4: return L("四级气旋")
+        case .category5: return L("五级气旋")
         }
     }
 
@@ -164,7 +164,7 @@ struct Cyclone: Identifiable, Hashable, Sendable {
     var windMs: Int { Int((Double(windKnots) * 0.5144).rounded()) }
 
     var displayName: String {
-        name.isEmpty || name.uppercased() == "UNNAMED" ? "未命名 \(basin.rawValue)" : name
+        name.isEmpty || name.uppercased() == "UNNAMED" ? String(format: L("未命名 %@"), basin.rawValue) : name
     }
 
     func with(isActive: Bool) -> Cyclone {
