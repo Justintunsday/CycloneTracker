@@ -70,6 +70,9 @@ final class CycloneStore {
             dataStalenessNote = stalenessHours > 24
                 ? "JTWC/IBTrACS 数据更新至 \(maxRowDate.formatted(date: .abbreviated, time: .shortened)),部分海盆可能滞后"
                 : nil
+            if let selected = selectedCyclone, !displayedCyclones.contains(where: { $0.id == selected.id }) {
+                selectedCyclone = nil
+            }
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -97,6 +100,9 @@ final class CycloneStore {
                 .compactMap { snapshot(of: $0, on: selectedDate) }
                 .sorted { $0.category > $1.category }
             didLoadHistorical = true
+            if let selected = selectedCyclone, !displayedCyclones.contains(where: { $0.id == selected.id }) {
+                selectedCyclone = nil
+            }
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
