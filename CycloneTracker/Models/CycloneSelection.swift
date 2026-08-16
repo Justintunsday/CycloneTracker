@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import MapKit
+import SwiftUI
 
 struct CycloneSelection: MapSelectable {
     let id: String
